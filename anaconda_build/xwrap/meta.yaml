@@ -1,0 +1,17 @@
+package:
+  name: xwrap
+  version: 0.1
+
+source:
+  path: /e/Projects/xwrap
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+about:
+  home: https://github.com/Xett/xwrap.git
