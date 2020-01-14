@@ -3,7 +3,7 @@ package:
   version: 0.1
 
 source:
-  path: /e/Projects/xwrap
+  git_url: https://github.com/Xett/xwrap.git
 
 requirements:
   build:
