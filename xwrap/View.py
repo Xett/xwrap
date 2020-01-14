@@ -159,3 +159,16 @@ class RenderPanel(wx.Panel):
         self.Update()
     def Draw(self,event):
         return RenderPanelDrawMainTask()
+#####################
+#       Panel       #
+#####################
+    #####################
+    #       Class       #
+    #####################
+class Panel(wx.Panel):
+    def __init__(self,parent):
+        wx.Panel.__init__(self,parent,main_sizer_orientation=wx.HORIZONTAL)
+        self.parent=parent
+        self.events=self.parent.events
+        self.main_sizer=wx.BoxSizer(main_sizer_orientation)
+        self.SetSizer(self.main_sizer)
