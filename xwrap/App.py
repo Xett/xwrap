@@ -33,6 +33,5 @@ class BaseApp:
         while self.events.task_queue.qsize()>0 or self.events.done_queue.qsize()>0:
             time.sleep(0.1)
         self.running=False
-        self.events.Close()
         wx.CallAfter(self.main_frame.Destroy)
         return e.CloseTask(event,self.events.Close)
