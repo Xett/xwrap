@@ -20,6 +20,7 @@ class MainLoopEvent(Event):
 class CloseEvent(Event):
     def __init__(self):
         Event.__init__(self,CLOSE_EVENT)
+        self.running=False
 class CloseTask(Task):
     def __init__(self,event,resfunc):
         Task.__init__(self,event,resfunc)
@@ -93,11 +94,16 @@ class Events:
             output=None
         return output
     def Worker(cls,input,output):
-        while self.running:
+        running=True
+        while running:
             task=input.get()
             if task!=None:
                 try:
                     task.do()
+                except:
+                    continue
+                try:
+                    running=task.event.running
                 except:
                     continue
             output.put((mp.current_process().name,mp.current_process().pid,task))
