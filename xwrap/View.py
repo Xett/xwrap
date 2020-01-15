@@ -170,5 +170,5 @@ class Panel(wx.Panel):
         wx.Panel.__init__(self,parent,main_sizer_orientation=wx.HORIZONTAL)
         self.parent=parent
         self.events=self.parent.events
-        self.main_sizer=wx.BoxSizer(main_sizer_orientation)
+        self.main_sizer=wx.BoxSizer(orient=main_sizer_orientation)
         self.SetSizer(self.main_sizer)
