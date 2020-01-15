@@ -72,6 +72,8 @@ class BufferBitmap:
         self.parent=parent
         self.events=self.parent.events
         self.images={}
+        self.event.AddEvent(BUFFER_BITMAP_DRAW_BUFFER_EVENT)
+        self.event.AddEvent(BUFFER_BITMAP_ONSIZE_EVENT)
         self.events.Bind(BUFFER_BITMAP_DRAW_BUFFER_EVENT,self.DrawBuffer)
         self.events.BindData(name,self)
     @property
@@ -135,6 +137,9 @@ class RenderPanel(wx.Panel):
         wx.Panel.__init__(self,parent)
         self.parent=parent
         self.events=self.parent.events
+        self.event.AddEvent(RENDER_PANEL_DRAW_MAIN_EVENT)
+        self.event.AddEvent(RENDER_PANEL_ONSIZE)
+        self.event.AddEvent(RENDER_PANEL_ONPAINT)
         self.buffer_bitmap=BufferBitmap(self)
         self.buffer_bitmap.addImage()
     def initialise(self):
