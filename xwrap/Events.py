@@ -106,6 +106,6 @@ class Events:
             except:
                 continue
             output.put((mp.current_process().name,mp.current_process().pid,task))
-        mp.current_process().terminate()
+        mp.current_process().close()
         mp.current_process().join()
     Worker=classmethod(Worker)
