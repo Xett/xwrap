@@ -63,6 +63,7 @@ class Events:
         self.done_queue_index=0
         self.events={}
         self.data_model=DataModel()
+        self.running=True
     def Initialise(self):
         for i in range(self.cpu_count):
             process=mp.Process(target=self.Worker,args=(self.task_queue,self.done_queue))
@@ -82,6 +83,7 @@ class Events:
             task=func(event)
             self.task_queue.put(task)
     def Close(self):
+        self.running=False
         for process in self.processes:
             process.join()
     def ProcessDoneQueue(self):
@@ -91,7 +93,7 @@ class Events:
             output=None
         return output
     def Worker(cls,input,output):
-        while True:
+        while self.running:
             task=input.get()
             if task!=None:
                 try:
