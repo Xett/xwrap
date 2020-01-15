@@ -166,8 +166,8 @@ class RenderPanel(wx.Panel):
     #       Class       #
     #####################
 class Panel(wx.Panel):
-    def __init__(self,parent):
-        wx.Panel.__init__(self,parent,main_sizer_orientation=wx.HORIZONTAL)
+    def __init__(self,parent,main_sizer_orientation=wx.HORIZONTAL):
+        wx.Panel.__init__(self,parent)
         self.parent=parent
         self.events=self.parent.events
         self.main_sizer=wx.BoxSizer(orient=main_sizer_orientation)
