@@ -24,6 +24,10 @@ class BaseApp:
             output=self.events.ProcessDoneQueue()
             if output!=None:
                 if output[2]!=None:
+                    try:
+                        print(output[2].event.result)
+                    except:
+                        continue
                     output[2].resfunc(self.events)
             while event_loop.Pending():
                 event_loop.Dispatch()
