@@ -141,14 +141,6 @@ class RenderPanel(wx.Panel):
         self.events.AddEvent(RENDER_PANEL_ONSIZE_EVENT)
         self.events.AddEvent(RENDER_PANEL_ONPAINT_EVENT)
         self.buffer_bitmap=BufferBitmap(self)
-        self.offset_coordinates=(0,0)
-        self.old_mouse_coordinate=(0,0)
-        self.new_mouse_coordinate=(0,0)
-        self.is_mouse_dragging=False
-        self.is_mouse_left_click_down=False
-        self.pens={}
-        self.brushes={}
-        self.text_colours={}
     def initialise(self):
         self.events.Bind(RENDER_PANEL_DRAW_MAIN_EVENT,self.Draw)
         self.events.Bind(RENDER_PANEL_ONSIZE_EVENT,self.buffer_bitmap.OnSize)
