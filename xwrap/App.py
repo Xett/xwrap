@@ -30,6 +30,7 @@ class BaseApp:
         while event_loop.Pending():
             event_loop.Dispatch()
     def OnClose(self,event):
+        print('PreClose')
         while self.events.task_queue.qsize()>0 or self.events.done_queue.qsize()>0:
             time.sleep(0.1)
         self.running=False
