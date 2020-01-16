@@ -18,7 +18,6 @@ class BaseApp:
         event_loop=wx.GUIEventLoop()
         wx.EventLoop.SetActive(event_loop)
         while self.running:
-            print('Start Main Loop')
             self.events.CallEvent(e.MainLoopEvent(self))
 #            while self.events.done_queue.qsize()>0:
             output=self.events.ProcessDoneQueue()
