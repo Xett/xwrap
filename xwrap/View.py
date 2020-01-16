@@ -141,7 +141,7 @@ class RenderPanel(wx.Panel):
         self.events.AddEvent(RENDER_PANEL_ONSIZE_EVENT)
         self.events.AddEvent(RENDER_PANEL_ONPAINT_EVENT)
         self.buffer_bitmap=BufferBitmap(self)
-        self.buffer_bitmap.AddImage()
+        self.buffer_bitmap.addImage()
     def initialise(self):
         self.events.Bind(RENDER_PANEL_DRAW_MAIN_EVENT,self.Draw)
         self.events.Bind(RENDER_PANEL_ONSIZE_EVENT,self.buffer_bitmap.OnSize)
