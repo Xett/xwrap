@@ -19,11 +19,11 @@ class BaseApp:
         wx.EventLoop.SetActive(event_loop)
         while self.running:
             self.events.CallEvent(e.MainLoopEvent(self))
-#            while self.events.done_queue.qsize()>0:
-            output=self.events.ProcessDoneQueue()
-            if output!=None:
-                if output[2]!=None:
-                    output[2].resfunc(self.events)
+            while self.events.done_queue.qsize()>0:
+                output=self.events.ProcessDoneQueue()
+                if output!=None:
+                    if output[2]!=None:
+                        output[2].resfunc(self.events)
             while event_loop.Pending():
                 event_loop.Dispatch()
             event_loop.ProcessIdle()
