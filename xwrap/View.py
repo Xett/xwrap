@@ -68,9 +68,9 @@ class BufferBitmapOnSizeEvent(e.Event):
     #       Class       #
     #####################
 class BufferBitmap:
-    def __init__(self,parent,name='BufferBitmap'):
+    def __init__(self,parent,events,name='BufferBitmap'):
         self.parent=parent
-        self.events=self.parent.events
+        self.events=events
         self.images={}
         self.events.Bind(BUFFER_BITMAP_DRAW_BUFFER_EVENT,self.DrawBuffer)
         self.events.BindData(name,self)
