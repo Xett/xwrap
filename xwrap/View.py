@@ -70,6 +70,7 @@ class BufferBitmapOnSizeEvent(e.Event):
 class BufferBitmap:
     def __init__(self,parent,name='BufferBitmap'):
         self.parent=parent
+        self.name=name
         self.events=self.parent.events
         self.images={}
         self.events.AddEvent(BUFFER_BITMAP_DRAW_BUFFER_EVENT)
@@ -88,7 +89,7 @@ class BufferBitmap:
     def AddImage(self,image,x=0,y=0):
         self.images[image]=(x,y)
     def OnSize(self,event):
-        self.events.CallEvent(BufferBitmapOnSizeEvent(self.events.data_model['BufferBitmap'].id,self.image,self.images))
+        self.events.CallEvent(BufferBitmapOnSizeEvent(self.events.data_model[self.name].id,self.image,self.images))
     def DrawBuffer(self,event):
         return BufferBitmapDrawBufferTask(event)
     def Draw(self,dc):
