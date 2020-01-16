@@ -123,12 +123,20 @@ class RenderPanelOnPaintEvent(e.Event):
 class RenderPanelDrawMainTask(e.Task):
     def __init__(self,event):
         e.Task.__init__(self,event,self.resfunc)
-    def resfunc(self,app):
-        self.dc=wx.MemoryDC()
-        self.buffer_bitmap.Draw(self.dc)
+    def do(self):
+        dc=wx.MemoryDC()
+        dc.SelectObject(self.event.image)
+        dc.SetBackground(wx.Brush(wx.Colour('white')))
+        dc.Clear()
+        self.event.draw_func(dc)
+    def resfunc(self,events):
+        events.data_model[self.event.id].data.image=self.event.image
 class RenderPanelDrawMainEvent(e.Event):
-    def __init__(self):
+    def __init__(self,id,image,draw_func):
         e.Event.__init__(self,RENDER_PANEL_DRAW_MAIN_EVENT)
+        self.id=id
+        self.image=image
+        self.draw_func=draw_func
     #####################
     #       Class       #
     #####################
@@ -156,9 +164,9 @@ class RenderPanel(wx.Panel):
         self.events.Bind(RENDER_PANEL_ONPAINT_EVENT,self.OnPaint)
         self.Bind(wx.EVT_SIZE,self.wxOnSize)
         self.Bind(wx.EVT_PAINT,self.wxOnPaint)
-        self.events.CallEvent(RenderPanelDrawMainEvent())
+        self.events.CallEvent(RenderPanelDrawMainEvent(self.buffer_bitmap.name,self.buffer_bitmap.image,self.buffer_bitmap.Draw))
     def wxOnPaint(self,events):
-        self.events.CallEvent(RenderPanelOnPaintEvent())
+        self.events.CallEvent(RenderPanelOnPaintEvent(self.buffer_bitmap.name))
     def OnPaint(self,event):
         return RenderPanelOnPaintTask()
     def wxOnSize(self,events):
@@ -166,7 +174,7 @@ class RenderPanel(wx.Panel):
     def OnSize(self,event):
         return RenderPanelOnSizeTask(self.UpdateDrawing)
     def UpdateDrawing(self,events):
-        self.events.CallEvent(RenderPanelDrawMainEvent())
+        self.events.CallEvent(RenderPanelDrawMainEvent(self.buffer_bitmap.name,self.buffer_bitmap.image,self.buffer_bitmap.Draw))
         self.Refresh(eraseBackground=False)
         self.Update()
     def Draw(self,event):
