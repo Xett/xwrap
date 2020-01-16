@@ -31,8 +31,8 @@ class BaseApp:
             event_loop.Dispatch()
     def OnClose(self,event):
         print('PreClose')
-        #while self.events.task_queue.qsize()>0 or self.events.done_queue.qsize()>0:
-        #    time.sleep(0.1)
+        while self.events.task_queue.qsize()>0 or self.events.done_queue.qsize()>0:
+            time.sleep(0.1)
         self.running=False
         print('Close')
         wx.CallAfter(self.main_frame.Destroy)
