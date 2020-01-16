@@ -156,17 +156,17 @@ class RenderPanel(wx.Panel):
         self.events.Bind(RENDER_PANEL_ONPAINT_EVENT,self.OnPaint)
         self.Bind(wx.EVT_SIZE,self.wxOnSize)
         self.Bind(wx.EVT_PAINT,self.wxOnPaint)
-        self.events.CallEvent(RENDER_PANEL_DRAW_MAIN_EVENT)
+        self.events.CallEvent(RenderPanelDrawMainEvent())
     def wxOnPaint(self,events):
-        self.events.callEvent(RenderPanelOnPaintEvent())
+        self.events.CallEvent(RenderPanelOnPaintEvent())
     def OnPaint(self,event):
         return RenderPanelOnPaintTask()
     def wxOnSize(self,events):
-        self.events.callEvent(RenderPanelOnSizeEvent())
+        self.events.CallEvent(RenderPanelOnSizeEvent())
     def OnSize(self,event):
         return RenderPanelOnSizeTask(self.UpdateDrawing)
     def UpdateDrawing(self,events):
-        self.events.CallEvent(RENDER_PANEL_DRAW_MAIN_EVENT)
+        self.events.CallEvent(RenderPanelDrawMainEvent())
         self.Refresh(eraseBackground=False)
         self.Update()
     def Draw(self,event):
