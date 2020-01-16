@@ -104,7 +104,7 @@ class RenderPanelOnSizeTask(e.Task):
         e.Task.__init__(self,event,self.resfunc)
 class RenderPanelOnSizeEvent(e.Event):
     def __init__(self):
-        e.Event.__init__(self,RENDER_PANEL_ONSIZE_EVENT)
+        e.Event.__init__(self,RENDER_PANEL_ONSIZE)
     #########################
     #       On Paint        #
     #########################
@@ -115,7 +115,7 @@ class RenderPanelOnPaintTask(e.Task):
         wx.BufferedPaintDC(self,self.events.data_model[self.id].data.image)
 class RenderPanelOnPaintEvent(e.Event):
     def __init__(self,id):
-        e.Event.__init__(self,RENDER_PANEL_ONPAINT_EVENT)
+        e.Event.__init__(self,RENDER_PANEL_ONSIZE)
         self.id=id
     #########################
     #       Draw Main       #
@@ -128,7 +128,7 @@ class RenderPanelDrawMainTask(e.Task):
         self.buffer_bitmap.Draw(self.dc)
 class RenderPanelDrawMainEvent(e.Event):
     def __init__(self):
-        e.Event.__init__(self,RENDER_PANEL_DRAW_MAIN_EVENT)
+        e.Event.__init__(self,RENDER_PANEL_ONSIZE)
     #####################
     #       Class       #
     #####################
@@ -138,15 +138,15 @@ class RenderPanel(wx.Panel):
         self.parent=parent
         self.events=self.parent.events
         self.events.AddEvent(RENDER_PANEL_DRAW_MAIN_EVENT)
-        self.events.AddEvent(RENDER_PANEL_ONSIZE_EVENT)
-        self.events.AddEvent(RENDER_PANEL_ONPAINT_EVENT)
+        self.events.AddEvent(RENDER_PANEL_ONSIZE)
+        self.events.AddEvent(RENDER_PANEL_ONPAINT)
         self.buffer_bitmap=BufferBitmap(self)
         self.buffer_bitmap.addImage()
     def initialise(self):
         self.events.Bind(RENDER_PANEL_DRAW_MAIN_EVENT,self.Draw)
-        self.events.Bind(RENDER_PANEL_ONSIZE_EVENT,self.buffer_bitmap.OnSize)
-        self.events.Bind(RENDER_PANEL_ONSIZE_EVENT,self.OnSize)
-        self.events.Bind(RENDER_PANEL_ONPAINT_EVENT,self.OnPaint)
+        self.events.Bind(RENDER_PANEL_ONSIZE,self.buffer_bitmap.OnSize)
+        self.events.Bind(RENDER_PANEL_ONSIZE,self.OnSize)
+        self.events.Bind(RENDER_PANEL_ONPAINT,self.OnPaint)
         self.Bind(wx.EVT_SIZE,self.wxOnSize)
         self.Bind(wx.EVT_PAINT,self.wxOnPaint)
         self.events.CallEvent(RENDER_PANEL_DRAW_MAIN_EVENT)
