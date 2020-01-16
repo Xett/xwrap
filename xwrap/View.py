@@ -72,7 +72,7 @@ class BufferBitmap:
         self.parent=parent
         self.name=name
         self.events=self.parent.events
-        self.image=wx.MemoryDC()
+        self.image=wx.Bitmap(self.size)
         self.images={}
         self.events.AddEvent(BUFFER_BITMAP_DRAW_BUFFER_EVENT)
         self.events.AddEvent(BUFFER_BITMAP_ONSIZE_EVENT)
