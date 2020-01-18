@@ -22,8 +22,8 @@ class CloseEvent(Event):
         Event.__init__(self,CLOSE_EVENT)
         self.running=False
 class CloseTask(Task):
-    def __init__(self,event):
-        Task.__init__(self,event)
+    def __init__(self,event,resfunc):
+        Task.__init__(self,event,resfunc)
 class Data:
     def __init__(self,id,name,data):
         self.id=id
