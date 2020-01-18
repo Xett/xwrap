@@ -92,7 +92,7 @@ class Events:
     def Worker(cls,input,output):
         running=True
         while running:
-            task=input.get(timeout=0.1)
+            task=input.get()
             if task!=None:
                 try:
                     task.do()
