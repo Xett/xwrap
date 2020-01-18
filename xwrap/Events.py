@@ -97,14 +97,15 @@ class Events:
                 task=input.get(timeout=0.1)
             except:
                 continue
-            try:
-                task.do()
-            except:
-                continue
-            try:
-                running=task.event.running
-            except:
-                continue
+            if task!=None:
+                try:
+                    task.do()
+                except:
+                    continue
+                try:
+                    running=task.event.running
+                except:
+                    continue
             output.put((mp.current_process().name,mp.current_process().pid,task))
-        mp.current_process().terminate()
+        mp.current_process().join()
     Worker=classmethod(Worker)
