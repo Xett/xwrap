@@ -83,6 +83,10 @@ class Events:
         for func in self.events[event.name]:
             task=func(event)
             self.task_queue.put(task)
+    def Close(self):
+        self.running=False
+        for process in self.processes:
+            process.join()
     def ProcessDoneQueue(self):
         try:
             output=self.done_queue.get(timeout=0.1)
