@@ -34,4 +34,5 @@ class BaseApp:
             time.sleep(0.1)
         self.running=False
         wx.CallAfter(self.main_frame.Destroy)
+        self.events.Close()
         return e.CloseTask(event)
