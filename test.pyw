@@ -7,22 +7,19 @@ import xwrap.Events as e
 import numpy as np
 import math
 PROCESS_TASKS_EVENT='Process-Tasks-Event'
-class ProcessTask(e.Task):
-    def __init__(self,event):
-        e.Task.__init__(self,event,self.resfunc)
+class ProcessTasksEvent(e.Event):
+    def __init__(self,output_text_control_id):
+        e.Event.__init__(self,PROCESS_TASKS_EVENT,self.resfunc)
+        self.output_text_control_id=output_text_control_id
     def do(self):
         result=0
         angle_rad=math.radians(np.random.normal()*10)
         result+=math.tanh(angle_rad)/math.cosh(angle_rad)/(np.random.normal()*10)
-        self.event.result=result
-        self.event.name=mp.current_process().name
-        self.event.pid=mp.current_process().pid
+        self.result=result
+        self.name=mp.current_process().name
+        self.pid=mp.current_process().pid
     def resfunc(self,events):
-        events.data_model[self.event.output_text_control_id].data.AppendText('{} {} {}\n'.format(self.event.name,self.event.pid,self.event.result))
-class ProcessTasksEvent(e.Event):
-    def __init__(self,id):
-        e.Event.__init__(self,PROCESS_TASKS_EVENT)
-        self.output_text_control_id=id
+        events.data_model[self.output_text_control_id].data.AppendText('{} {} {}\n'.format(self.name,self.pid,self.result))
 class MainFrame(Frame):
     def __init__(self,events,title='Test App'):
         Frame.__init__(self,events,title)
@@ -55,7 +52,8 @@ class TestApp(BaseApp):
         self.main_frame.Show(True)
         self.MainLoop()
     def ProcessTasks(self,event):
-        return ProcessTask(event)
+        id=self.events.data_model['MainFrame_OutputTextControl'].id
+        return ProcessTasksEvent(id)
 if __name__=="__main__":
     mp.freeze_support()
     test_app=TestApp()

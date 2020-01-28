@@ -23,16 +23,18 @@ class BaseApp:
                 output=self.events.ProcessDoneQueue()
                 if output!=None:
                     if output[2]!=None:
-                        output[2].resfunc(self.events)
+                        if output[2].resfunc!=None:
+                            output[2].resfunc(self.events)
             while event_loop.Pending():
                 event_loop.Dispatch()
             event_loop.ProcessIdle()
         while event_loop.Pending():
             event_loop.Dispatch()
     def OnClose(self,event):
-        while self.events.task_queue.qsize()>0 or self.events.done_queue.qsize()>0:
-            time.sleep(0.1)
+        self.events.running=False
+        #while self.events.task_queue.qsize()>0 or self.events.done_queue.qsize()>0:
+        #    time.sleep(0.1)
         self.running=False
         wx.CallAfter(self.main_frame.Destroy)
         self.events.Close()
-        return e.CloseTask(event)
+        return e.CloseEvent(event)

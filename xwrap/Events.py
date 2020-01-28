@@ -4,26 +4,19 @@ INITIALISE_EVENT='Initialise-Event'
 MAIN_LOOP_EVENT='Main-Loop-Event'
 CLOSE_EVENT='Close-Event'
 class Event:
-    def __init__(self,name):
+    def __init__(self,name,resfunc):
         self.name=name
-class Task:
-    def __init__(self,event,resfunc=None):
-        self.event=event
         self.resfunc=resfunc
 class InitialiseEvent(Event):
-    def __init__(self):
-        Event.__init__(self,INITIALISE_EVENT)
+    def __init__(self,resfunc=None):
+        Event.__init__(self,INITIALISE_EVENT,resfunc)
 class MainLoopEvent(Event):
-    def __init__(self,app):
-        Event.__init__(self,MAIN_LOOP_EVENT)
-        self.app=app
+    def __init__(self,resfunc=None):
+        Event.__init__(self,MAIN_LOOP_EVENT,resfunc)
 class CloseEvent(Event):
-    def __init__(self):
-        Event.__init__(self,CLOSE_EVENT)
+    def __init__(self,resfunc=None):
+        Event.__init__(self,CLOSE_EVENT,resfunc)
         self.running=False
-class CloseTask(Task):
-    def __init__(self,event):
-        Task.__init__(self,event)
 class Data:
     def __init__(self,id,name,data):
         self.id=id
@@ -48,9 +41,7 @@ class DataModel:
                 return self.GetByName(key)
         elif isinstance(key,int):
             return self.GetByID(key)
-        else:
-            print('ree')
-            return None
+        return None
     def __len__(self):
         return len(self.data)
 class Events:
@@ -59,7 +50,7 @@ class Events:
         self.cpu_count=mp.cpu_count()
         self.task_queue=mp.Queue()
         self.done_queue=mp.Queue()
-        self.keep_going=True
+        self.running=True
         self.task_queue_index=0
         self.done_queue_index=0
         self.events={}
@@ -79,9 +70,10 @@ class Events:
     def BindData(self,name,data):
         self.data_model.Bind(name,data)
     def CallEvent(self,event):
-        for func in self.events[event.name]:
-            task=func(event)
-            self.task_queue.put(task)
+        if self.running:
+            for func in self.events[event.name]:
+                task=func(event)
+                self.task_queue.put(task)
     def Close(self):
         for process in self.processes:
             process.terminate()
@@ -95,12 +87,12 @@ class Events:
     def Worker(cls,input,output):
         running=True
         while running:
-            task=input.get()
-            if task!=None:
-                if hasattr(task,'do'):
-                    task.do()
-                if hasattr(task.event,'running'):
-                    running=task.event.running
-            output.put((mp.current_process().name,mp.current_process().pid,task))
+            event=input.get()
+            if event!=None:
+                if hasattr(event,'do'):
+                    event.do()
+                if hasattr(event,'running'):
+                    running=event.running
+            output.put((mp.current_process().name,mp.current_process().pid,event))
         return
     Worker=classmethod(Worker)
