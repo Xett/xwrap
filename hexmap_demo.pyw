@@ -7,10 +7,10 @@ from xwrap.App import *
 from xwrap.Events import *
 from xwrap.View import *
 from collections import OrderedDict
-from hexmap import Iterators
-from hexmap.Coords import Cube
-from hexmap.Coords import Axial
-from hexmap.Maps import RadialMap
+#from hexmap import Iterators
+#from hexmap.Coords import Cube
+#from hexmap.Coords import Axial
+#from hexmap.Maps import RadialMap
 import wx
 def pixel_to_hex(point):
     q=((2./3)*point[0])/100
@@ -406,21 +406,47 @@ class HexMapControlPanel(Panel):
         self.main_sizer.Add(self.notation_type_control,0,wx.EXPAND)
         self.selected_tile_control_panel=SelectedTileControlPanel(self)
         self.main_sizer.Add(self.selected_tile_control_panel,0,wx.EXPAND)
+class RenderPanel(wx.Panel):
+    def __init__(self,parent):
+        wx.Panel.__init__(self,parent,size=(100,100))
+        self.events=parent.events
+        self.Bind(wx.EVT_SIZE,self.wxOnSize)
+        self.Bind(wx.EVT_PAINT,self.wxOnPaint)
+        #self.buffer_image=wx.Bitmap((100,100))
+    def wxOnSize(self,events):
+        self.buffer_image=wx.Bitmap(*self.ClientSize)
+        self.UpdateDrawing()
+    def wxOnPaint(self,events):
+        wx.BufferedPaintDC(self,self.buffer_image)
+    def UpdateDrawing(self):
+        dc=wx.MemoryDC()
+        try:
+            dc.SelectObject(self.buffer_image)
+        except:
+            self.wxOnSize(None)
+        self.Draw(dc)
+        self.Refresh(eraseBackground=False)
+        self.Update()
+    def Draw(self,dc):
+        dc.SetBackground(wx.Brush(wx.Colour('white')))
+        dc.Clear()
 class MainFrame(Frame):
     def __init__(self,events,title="Hexmap Demo"):
         Frame.__init__(self,events,title)
         self.CreateStatusBar()
         self.hexmap_control_panel=HexMapControlPanel(self)
-        #self.render_panel=MapRenderPanel(self)
+        self.render_panel=RenderPanel(self)
         self.inner_sizer=wx.BoxSizer()
         self.main_sizer.Add(self.inner_sizer,1,wx.EXPAND)
         self.inner_sizer.Add(self.hexmap_control_panel,0,wx.EXPAND)
-        #self.inner_sizer.Add(self.render_panel,1,wx.EXPAND)
+        self.inner_sizer.Add(self.render_panel,1,wx.EXPAND)
+        self.Layout()
+        self.Fit()
 class App(BaseApp):
     def __init__(self):
         BaseApp.__init__(self)
         self.radius=1
-        self.hexmap=RadialMap(self.radius)
+        #self.hexmap=RadialMap(self.radius)
         self.main_frame=MainFrame(self.events)
     def Initialise(self,event):
         self.main_frame.Show(True)
