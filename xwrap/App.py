@@ -32,8 +32,6 @@ class BaseApp:
             event_loop.Dispatch()
     def OnClose(self):
         self.events.running=False
-        #while self.events.task_queue.qsize()>0 or self.events.done_queue.qsize()>0:
-        #    time.sleep(0.1)
         self.running=False
         wx.CallAfter(self.main_frame.Destroy)
         self.events.Close()

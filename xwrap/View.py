@@ -1,5 +1,6 @@
 import wx
 from . import Events as e
+MOUSE_UPDATE_EVENT='Mouse-Update-Event'
 class Bitmap:
     def __init__(self,parent,name,width=10,height=10,x=0,y=0):
         self.parent=parent
@@ -9,12 +10,6 @@ class Bitmap:
         self._height=height
         self._x=x
         self._y=y
-        self.draw_event_name='{}-Draw-Event'.format(self.name)
-        self.onsize_event_name='{}-OnSize-Event'.format(self.name)
-        self.events.AddEvent(self.draw_event_name)
-        self.events.Bind(self.draw_event_name,self.DrawEvent)
-        self.events.AddEvent(self.onsize_event_name)
-        self.events.Bind(self.onsize_event_name,self.OnSize)
         self.image=wx.Bitmap(self.size)
     @property
     def width(self):
@@ -37,12 +32,11 @@ class Bitmap:
     @property
     def center_y(self):
         return self.size[1]/2
-    def Draw(dc,image,size,center_x,center_y):
+    def Draw(self):
         return
-    def OnSize(self,event):
-        return BitmapOnSizeTask(event,self.name)
-    def DrawEvent(self,event):
-        return BitmapDrawTask(event,self.Draw)
+    def OnSize(self):
+        self.image=wx.Bitmap(self.size)
+        self.Draw()
 class Frame(wx.Frame):
     def __init__(self,events,title='Frame',size=(1920,1080)):
         wx.Frame.__init__(self,None,-1,title,size)
@@ -68,9 +62,11 @@ class RenderPanel(wx.Panel):
         self.old_mouse_coord=(0,0)
         self.offset_coord=(0,0)
         self.events.BindData(self.name,self)
+        self.events.AddEvent(MOUSE_UPDATE_EVENT)
         self.Bind(wx.EVT_SIZE,self.wxOnSize)
         self.Bind(wx.EVT_PAINT,self.wxOnPaint)
-        self.Bind(wx.EVT_MOUSE_EVENTS,self.UpdateMouse)
+        self.Bind(wx.EVT_MOUSE_EVENTS,self.wxUpdateMouse)
+        #self.events.Bind()
         self.text_colours={}
         self.pens={}
         self.brushes={}
@@ -93,24 +89,23 @@ class RenderPanel(wx.Panel):
         dc.SetBackground(self.brushes['background'])
         dc.Clear()
         self.Draw(dc)
-    def UpdateMouse(self,event):
+    def wxUpdateMouse(self,event):
         self.old_mouse_coord=self.new_mouse_coord
         self.new_mouse_coord=(event.GetX(),event.GetY())
         center_x,center_y=(self.GetSize())/2
-        point=(
+        self.point=(
             self.new_mouse_coord[0]-center_x-self.offset_coord[0],
             self.new_mouse_coord[1]-center_y-self.offset_coord[1])
         if event.Dragging():
             self.is_dragging=True
-            self.lock.acquire()
             self.offset_coord=(self.offset_coord[0]+(self.new_mouse_coord[0]-self.old_mouse_coord[0]),self.offset_coord[1]+(self.new_mouse_coord[1]-self.old_mouse_coord[1]))
-            self.lock.release()
             self.UpdateDrawing()
         elif event.LeftDown():
             self.is_left_click_down=True
         elif event.LeftUp():
             self.is_dragging=False
             self.is_left_click_down=False
+        self.events.CallEvent(MOUSE_UPDATE_EVENT)
 class RadioBox(wx.RadioBox):
     def __init__(self,parent,name,choice_event_name,choices=[]):
         wx.RadioBox.__init__(self,parent,choices=choices)
@@ -118,7 +113,20 @@ class RadioBox(wx.RadioBox):
         self.name=name
         self.choice_event_name=choice_event_name
         self.events=self.parent.events
+        self.events.AddEvent(self.choice_event_name)
         self.events.BindData(self.name,self)
         self.Bind(wx.EVT_RADIOBOX,self.wxOnChoice)
     def wxOnChoice(self,event):
         self.events.CallEvent(self.choice_event_name)
+class SpinCtrl(wx.SpinCtrl):
+    def __init__(self,parent,name,change_event_name,value='0',min=0,max=100):
+        wx.SpinCtrl.__init__(self,parent,value=value,min=min,max=max)
+        self.parent=parent
+        self.name=name
+        self.change_event_name=change_event_name
+        self.events=self.parent.events
+        self.events.AddEvent(self.change_event_name)
+        self.events.BindData(self.name,self)
+        self.Bind(wx.EVT_SPINCTRL,self.wxOnChange)
+    def wxOnChange(self,event):
+        self.events.CallEvent(self.change_event_name)

@@ -7,11 +7,17 @@ from xwrap.App import *
 from xwrap.Events import *
 from xwrap.View import *
 from collections import OrderedDict
-#from hexmap import Iterators
-#from hexmap.Coords import Cube
-#from hexmap.Coords import Axial
-#from hexmap.Maps import RadialMap
+from hexmap import Iterators
+from hexmap.Coords import Cube
+from hexmap.Coords import Axial
+from hexmap.Maps import RadialMap
 NOTATION_TYPE_CONTROL_CHOICE_CHANGED_EVENT='Notation-Type-Control-Choice-Changed-Event'
+SELECTED_TILE_TYPE_CONTROL_CHOICE_CHANGED_EVENT='Selected-Tile-Type-Control-Choice-Changed-Event'
+RADIUS_SPIN_CONTROL_CHANGE_EVENT='Radius-Spin-Control-Change-Event'
+SELECTED_TILE_X_SPIN_CONTROL_CHANGE_EVENT='Selected-Tile-X-Spin-Control-Change-Event'
+SELECTED_TILE_Y_SPIN_CONTROL_CHANGE_EVENT='Selected-Tile-Y-Spin-Control-Change-Event'
+SELECTED_TILE_Z_SPIN_CONTROL_CHANGE_EVENT='Selected-Tile-Z-Spin-Control-Change-Event'
+SET_SELECTED_TILE_EVENT='Set-Selected-Tile-Event'
 def pixel_to_hex(point):
     q=((2./3)*point[0])/100
     r=(((-1./3)*point[0])+(np.sqrt(3)/3)*point[1])/100
@@ -24,6 +30,55 @@ class NotationTypeControlChoiceChangedEvent(Event):
     def resfunc(self,events):
         choice=events.data_model[self.notation_type_control_id].data.GetString(events.data_model[self.notation_type_control_id].data.GetSelection())
         events.data_model[self.map_render_panel_id].data.SetNotationType(choice)
+class SelectedTileTypeControlChoiceChangedEvent(Event):
+    def __init__(self,selected_tile_type_control_id,map_render_panel_id):
+        Event.__init__(self,SELECTED_TILE_TYPE_CONTROL_CHOICE_CHANGED_EVENT,self.resfunc)
+        self.selected_tile_type_control_id=selected_tile_type_control_id
+        self.map_render_panel_id=map_render_panel_id
+    def resfunc(self,events):
+        choice=events.data_model[self.selected_tile_type_control_id].data.GetString(events.data_model[self.selected_tile_type_control_id].data.GetSelection())
+        #events.data_model[self.map_render_panel_id].data.SetNotationType(choice)
+        #    def SetSelectedTileType(self,event):
+        #        choice=self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.GetString(self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.GetSelection())
+        #        x=self.main_frame.render_panel.selected_tile.x
+        #        y=self.main_frame.render_panel.selected_tile.y
+        #        z=self.main_frame.render_panel.selected_tile.z
+        #        tile=self.hexmap[Cube(x,y,z)]
+        #        if tile!=False:
+        #            if choice=='Movement Cost 1':
+        #                tile.movement_cost=1
+        #            elif choice=='Movement Cost 2':
+        #                tile.movement_cost=2
+        #            if choice=='Not Passable':
+        #                tile.isPassable=False
+class RadiusSpinControlChangeEvent(Event):
+    def __init__(self,radius_spin_control_id,radius_id,hexmap_id,map_render_panel_id):
+        Event.__init__(self,RADIUS_SPIN_CONTROL_CHANGE_EVENT,self.resfunc)
+        self.radius_spin_control_id=radius_spin_control_id
+        self.radius_id=radius_id
+        self.hexmap_id=hexmap_id
+        self.map_render_panel_id=map_render_panel_id
+    def resfunc(self,events):
+        radius=events.data_model[self.radius_spin_control_id].data.GetValue()
+        events.data_model[self.radius_id].data=radius
+        events.data_model[self.hexmap_id].data.populateMap(radius)
+        events.data_model[self.map_render_panel_id].data.wxOnSize(None)
+class SetSelectedTileEvent(Event):
+    def __init__(self):
+        Event.__init__(self,SET_SELECTED_TILE_EVENT,self.resfunc)
+    def resfunc(self,events):
+        x=events.data_model['Selected-Tile-X-Spin-Control'].data.GetValue()
+        y=events.data_model['Selected-Tile-Y-Spin-Control'].data.GetValue()
+        z=events.data_model['Selected-Tile-Z-Spin-Control'].data.GetValue()
+#        self.main_frame.render_panel.selected_tile=Cube(x,y,z)
+#        tile=self.hexmap[Cube(x,y,z)]
+#        if tile!=False:
+#            if not tile.isPassable:
+#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(2)
+#            elif tile.movement_cost==1:
+#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(0)
+#            elif tile.movement_cost==2:
+#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(1)
 class HexmapBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Hexmap-Bitmap')
@@ -42,15 +97,20 @@ class HexmapBitmap(Bitmap):
     @property
     def y(self):
         return 0
-    def Draw(dc,image,size,center_x,center_y):
+    def Draw(self):
+        dc=wx.MemoryDC()
+        dc.SelectObject(self.image)
+        dc.SetBackground(self.parent.brushes['background'])
+        dc.Clear()
         height=(100)*np.sqrt(3)
         width=(100)*2
-        for x,y,z in Iterators.RingIterator(self.parent.hexmap.radius,6):
+        hexmap=self.events.data_model['Hexmap'].data
+        for x,y,z in Iterators.RingIterator(hexmap.radius,6):
             x_coord=x*((width/4)*3)
             y_coord=(y*(height/2))-(z*(height/2))
-            h=[(vert[0]+x_coord+center_x+self.parent.offset_coord[0],
-                vert[1]-y_coord+center_y+self.parent.offset_coord[1]) for vert in self.parent.hexagon]
-            tile=self.parent.hexmap[Cube(x,y,z)]
+            h=[(vert[0]+x_coord+self.center_x+self.parent.offset_coord[0],
+                vert[1]-y_coord+self.center_y+self.parent.offset_coord[1]) for vert in self.parent.hexagon]
+            tile=hexmap[Cube(x,y,z)]
             dc.SetBrush(wx.Brush(wx.Colour(255,255,255)))
             if (x,y,z)==(self.parent.hovered_tile.x,self.parent.hovered_tile.y,self.parent.hovered_tile.z):
                 dc.SetBrush(wx.Brush(wx.Colour(0,255,255)))
@@ -72,17 +132,17 @@ class HexmapBitmap(Bitmap):
             }
             if self.parent.notation_type=='Cube':
                 cubic_coordinates={
-                    'X':(x_coord+center_x+self.parent.offset_coord[0]-(text_sizes['X'][0]/2),-y_coord+center_y+self.parent.offset_coord[1]-(height/3)),
-                    'Y':(x_coord+center_x+self.parent.offset_coord[0]-(width/4),-y_coord+center_y+self.parent.offset_coord[1]+(height/4)-text_sizes['Y'][1]),
-                    'Z':(x_coord+center_x+self.parent.offset_coord[0]+(width/4)-text_sizes['Z'][0],-y_coord+center_y+self.parent.offset_coord[1]+(height/4)-text_sizes['Z'][1])
+                    'X':(x_coord+self.center_x+self.parent.offset_coord[0]-(text_sizes['X'][0]/2),-y_coord+self.center_y+self.parent.offset_coord[1]-(height/3)),
+                    'Y':(x_coord+self.center_x+self.parent.offset_coord[0]-(width/4),-y_coord+self.center_y+self.parent.offset_coord[1]+(height/4)-text_sizes['Y'][1]),
+                    'Z':(x_coord+self.center_x+self.parent.offset_coord[0]+(width/4)-text_sizes['Z'][0],-y_coord+self.center_y+self.parent.offset_coord[1]+(height/4)-text_sizes['Z'][1])
                 }
                 for coord,axis in zip([x,y,z],['X','Y','Z']):
                     dc.SetTextForeground(self.parent.text_colours[axis])
                     dc.DrawText(str(coord),cubic_coordinates[axis][0],cubic_coordinates[axis][1])
             elif self.parent.notation_type=='Axial':
                 axial_coordinates={
-                    'X':(x_coord+center_x+self.parent.offset_coord[0]-(width/4),-y_coord+center_y+self.parent.offset_coord[1]-(text_sizes['X'][1]/2)),
-                    'Y':(x_coord+center_x+self.parent.offset_coord[0]+(width/4)-text_sizes['Y'][0],-y_coord+center_y+self.parent.offset_coord[1]-(text_sizes['Y'][1]/2))
+                    'X':(x_coord+self.center_x+self.parent.offset_coord[0]-(width/4),-y_coord+self.center_y+self.parent.offset_coord[1]-(text_sizes['X'][1]/2)),
+                    'Y':(x_coord+self.center_x+self.parent.offset_coord[0]+(width/4)-text_sizes['Y'][0],-y_coord+self.center_y+self.parent.offset_coord[1]-(text_sizes['Y'][1]/2))
                 }
                 dc.DrawText(str(x),axial_coordinates['X'][0],axial_coordinates['X'][1])
                 dc.DrawText(str(y),axial_coordinates['Y'][0],axial_coordinates['Y'][1])
@@ -218,9 +278,6 @@ class AxisBitmap(Bitmap):
             self.DrawAxial()
         else:
             self.DrawNone()
-    def OnSize(self):
-        self.image=wx.Bitmap(self.size)
-        self.Draw()
     def SetMode(self,choice):
         self.current_mode=choice
         self.OnSize()
@@ -272,11 +329,11 @@ class SelectedTileControlPanel(Panel):
         Panel.__init__(self,parent,main_sizer_orientation=wx.VERTICAL)
         self.selected_tile_label=wx.StaticText(self,label='Selected Tile')
         self.selected_tile_x_label=wx.StaticText(self,label='X:')
-        self.selected_tile_x_control=wx.SpinCtrl(self,min=-100)
+        self.selected_tile_x_control=SpinCtrl(self,'Selected-Tile-X-Spin-Control',SELECTED_TILE_X_SPIN_CONTROL_CHANGE_EVENT,min=-100)
         self.selected_tile_y_label=wx.StaticText(self,label='Y:')
-        self.selected_tile_y_control=wx.SpinCtrl(self,min=-100)
+        self.selected_tile_y_control=SpinCtrl(self,'Selected-Tile-Y-Spin-Control',SELECTED_TILE_Y_SPIN_CONTROL_CHANGE_EVENT,min=-100)
         self.selected_tile_z_label=wx.StaticText(self,label='Z:')
-        self.selected_tile_z_control=wx.SpinCtrl(self,min=-100)
+        self.selected_tile_z_control=SpinCtrl(self,'Selected-Tile-Z-Spin-Control',SELECTED_TILE_Z_SPIN_CONTROL_CHANGE_EVENT,min=-100)
         self.selected_tile_coord_sizer=wx.BoxSizer()
         self.selected_tile_coord_sizer.Add(self.selected_tile_x_label,0,wx.EXPAND)
         self.selected_tile_coord_sizer.Add(self.selected_tile_x_control,0,wx.EXPAND)
@@ -286,14 +343,14 @@ class SelectedTileControlPanel(Panel):
         self.selected_tile_coord_sizer.Add(self.selected_tile_z_control,0,wx.EXPAND)
         self.main_sizer.Add(self.selected_tile_label,0,wx.EXPAND)
         self.main_sizer.Add(self.selected_tile_coord_sizer,0,wx.EXPAND)
-        self.selected_tile_type_control=wx.RadioBox(self,choices=['Movement Cost 1','Movement Cost 2','Not Passable'])
+        self.selected_tile_type_control=RadioBox(self,'Selected-Tile-Type-Control',SELECTED_TILE_TYPE_CONTROL_CHOICE_CHANGED_EVENT,choices=['Movement Cost 1','Movement Cost 2','Not Passable'])
         self.main_sizer.Add(self.selected_tile_type_control,0,wx.EXPAND)
 class HexMapControlPanel(Panel):
     def __init__(self,parent):
         Panel.__init__(self,parent,main_sizer_orientation=wx.VERTICAL)
         self.events=self.parent.events
         self.radius_label=wx.StaticText(self,label='Radius:')
-        self.radius_control=wx.SpinCtrl(self,value='1')
+        self.radius_control=SpinCtrl(self,'Radius-Spin-Control',RADIUS_SPIN_CONTROL_CHANGE_EVENT,value='1')
         self.radius_sizer=wx.BoxSizer()
         self.radius_sizer.Add(self.radius_label,1,wx.EXPAND)
         self.radius_sizer.Add(self.radius_control,1,wx.EXPAND)
@@ -305,8 +362,8 @@ class HexMapControlPanel(Panel):
 class MapRenderPanel(RenderPanel):
     def __init__(self,parent,name):
         RenderPanel.__init__(self,parent,name)
-#        self.selected_tile=Cube(0,0,0)
-#        self.hovered_tile=Cube(0,0,0)
+        self.selected_tile=Cube(0,0,0)
+        self.hovered_tile=Cube(0,0,0)
         self.notation_type='None'
         self.text_colours['X']=wx.Colour('green')
         self.text_colours['Y']=wx.Colour('pink')
@@ -321,8 +378,8 @@ class MapRenderPanel(RenderPanel):
         self.brushes['not_passable_tile']=wx.Brush(wx.Colour(0,0,0))
         self.brushes['movement_cost_1_tile']=wx.Brush(wx.Colour(255,255,255))
         self.brushes['movement_cost_2_tile']=wx.Brush(wx.Colour(139,69,19))
-#        self.hexmap_bitmap=HexmapBitmap(self)
         self.axis_bitmap=AxisBitmap(self)
+        self.hexmap_bitmap=HexmapBitmap(self)
     @property
     def hexagon(self):
         return [(((100)*np.cos((np.pi/180)*(60*i))),
@@ -331,8 +388,10 @@ class MapRenderPanel(RenderPanel):
         self.axis_bitmap.SetMode(choice)
         self.wxOnSize(None)
     def Draw(self,dc):
-        dc.DrawBitmap(self.axis_bitmap.image,self.axis_bitmap.x,self.axis_bitmap.y)
+        dc.DrawBitmap(self.hexmap_bitmap.image,self.hexmap_bitmap.x+self.offset_coord[0],self.hexmap_bitmap.y+self.offset_coord[1])
+        dc.DrawBitmap(self.axis_bitmap.image,self.axis_bitmap.x+self.offset_coord[0],self.axis_bitmap.y+self.offset_coord[1])
     def wxOnSize(self,event):
+        self.hexmap_bitmap.OnSize()
         self.axis_bitmap.OnSize()
         RenderPanel.wxOnSize(self,event)
 #        self.hovered_tile=pixel_to_hex(point)
@@ -352,10 +411,13 @@ class App(BaseApp):
     def __init__(self):
         BaseApp.__init__(self)
         self.radius=1
-        #self.hexmap=RadialMap(self.radius)
+        self.events.BindData('Hexmap-Radius',self.radius)
+        self.hexmap=RadialMap(self.radius)
+        self.events.BindData('Hexmap',self.hexmap)
         self.main_frame=MainFrame(self.events)
-        self.events.AddEvent(NOTATION_TYPE_CONTROL_CHOICE_CHANGED_EVENT)
         self.events.Bind(NOTATION_TYPE_CONTROL_CHOICE_CHANGED_EVENT,self.NotationTypeControlChoiceChanged)
+        self.events.Bind(SELECTED_TILE_TYPE_CONTROL_CHOICE_CHANGED_EVENT,self.SelectedTileTypeControlChoiceChanged)
+        self.events.Bind(RADIUS_SPIN_CONTROL_CHANGE_EVENT,self.RadiusSpinControlChange)
     def Initialise(self):
         self.main_frame.Show(True)
         self.MainLoop()
@@ -363,6 +425,16 @@ class App(BaseApp):
         notation_type_control_id=self.events.data_model['Notation-Type-Control'].id
         map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
         return NotationTypeControlChoiceChangedEvent(notation_type_control_id,map_render_panel_id)
+    def SelectedTileTypeControlChoiceChanged(self):
+        selected_tile_type_control_id=self.events.data_model['Selected-Tile-Type-Control'].id
+        map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
+        return SelectedTileTypeControlChoiceChangedEvent(selected_tile_type_control_id,map_render_panel_id)
+    def RadiusSpinControlChange(self):
+        radius_spin_control_id=self.events.data_model['Radius-Spin-Control'].id
+        radius_id=self.events.data_model['Hexmap-Radius'].id
+        hexmap_id=self.events.data_model['Hexmap'].id
+        map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
+        return RadiusSpinControlChangeEvent(radius_spin_control_id,radius_id,hexmap_id,map_render_panel_id)
 #        self.main_frame.hexmap_control_panel.radius_control.Bind(wx.EVT_SPINCTRL, self.SetRadius)
         #self.main_frame.hexmap_control_panel.zoom_control.Bind(wx.EVT_SPINCTRL, self.SetZoom)
 #        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_x_control.Bind(wx.EVT_SPINCTRL, self.SetSelectedTile)
@@ -370,38 +442,8 @@ class App(BaseApp):
 #        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_z_control.Bind(wx.EVT_SPINCTRL, self.SetSelectedTile)
 #        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.Bind(wx.EVT_RADIOBOX, self.SetSelectedTileType)
 #        self.main_frame.render_panel.Bind(wx.EVT_LEFT_DOWN,self.RenderPanelLeftMouseDown)
-#        self.main_frame.hexmap_control_panel.notation_type_control.Bind(wx.EVT_RADIOBOX, self.SetNotationType)
-#    def SetRadius(self,event):
-#        self.radius=self.main_frame.hexmap_control_panel.radius_control.GetValue()
-#        self.hexmap.populateMap(self.radius)
     #def SetZoom(self,event):
         #self.main_frame.render_panel.zoom=self.main_frame.hexmap_control_panel.zoom_control.GetValue()
-#    def SetSelectedTile(self,event):
-#        x=self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_x_control.GetValue()
-#        y=self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_y_control.GetValue()
-#        z=self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_z_control.GetValue()
-#        self.main_frame.render_panel.selected_tile=Cube(x,y,z)
-#        tile=self.hexmap[Cube(x,y,z)]
-#        if tile!=False:
-#            if not tile.isPassable:
-#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(2)
-#            elif tile.movement_cost==1:
-#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(0)
-#            elif tile.movement_cost==2:
-#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(1)
-#    def SetSelectedTileType(self,event):
-#        choice=self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.GetString(self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.GetSelection())
-#        x=self.main_frame.render_panel.selected_tile.x
-#        y=self.main_frame.render_panel.selected_tile.y
-#        z=self.main_frame.render_panel.selected_tile.z
-#        tile=self.hexmap[Cube(x,y,z)]
-#        if tile!=False:
-#            if choice=='Movement Cost 1':
-#                tile.movement_cost=1
-#            elif choice=='Movement Cost 2':
-#                tile.movement_cost=2
-#            if choice=='Not Passable':
-#                tile.isPassable=False
 #    def RenderPanelLeftMouseDown(self,event):
 #        tile=self.hexmap[Cube(self.main_frame.render_panel.hovered_tile.x,self.main_frame.render_panel.hovered_tile.y,self.main_frame.render_panel.hovered_tile.z)]
 #        if tile!=False:
