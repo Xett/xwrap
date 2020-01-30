@@ -64,9 +64,13 @@ class RenderPanel(wx.Panel):
         wx.Panel.__init__(self,parent,size=(100,100))
         self.events=parent.events
         self.name=name
+        self.new_mouse_coord=(0,0)
+        self.old_mouse_coord=(0,0)
+        self.offset_coord=(0,0)
         self.events.BindData(self.name,self)
         self.Bind(wx.EVT_SIZE,self.wxOnSize)
         self.Bind(wx.EVT_PAINT,self.wxOnPaint)
+        self.Bind(wx.EVT_MOUSE_EVENTS,self.UpdateMouse)
         self.text_colours={}
         self.pens={}
         self.brushes={}
@@ -74,7 +78,7 @@ class RenderPanel(wx.Panel):
     def wxOnSize(self,event):
         self.buffer_image=wx.Bitmap(*self.ClientSize)
         self.UpdateDrawing()
-    def wxOnPaint(self,events):
+    def wxOnPaint(self,event):
         wx.BufferedPaintDC(self,self.buffer_image)
     def UpdateDrawing(self):
         dc=wx.MemoryDC()
@@ -89,6 +93,24 @@ class RenderPanel(wx.Panel):
         dc.SetBackground(self.brushes['background'])
         dc.Clear()
         self.Draw(dc)
+    def UpdateMouse(self,event):
+        self.old_mouse_coord=self.new_mouse_coord
+        self.new_mouse_coord=(event.GetX(),event.GetY())
+        center_x,center_y=(self.GetSize())/2
+        point=(
+            self.new_mouse_coord[0]-center_x-self.offset_coord[0],
+            self.new_mouse_coord[1]-center_y-self.offset_coord[1])
+        if event.Dragging():
+            self.is_dragging=True
+            self.lock.acquire()
+            self.offset_coord=(self.offset_coord[0]+(self.new_mouse_coord[0]-self.old_mouse_coord[0]),self.offset_coord[1]+(self.new_mouse_coord[1]-self.old_mouse_coord[1]))
+            self.lock.release()
+            self.UpdateDrawing()
+        elif event.LeftDown():
+            self.is_left_click_down=True
+        elif event.LeftUp():
+            self.is_dragging=False
+            self.is_left_click_down=False
 class RadioBox(wx.RadioBox):
     def __init__(self,parent,name,choice_event_name,choices=[]):
         wx.RadioBox.__init__(self,parent,choices=choices)

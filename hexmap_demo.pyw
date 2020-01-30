@@ -24,72 +24,6 @@ class NotationTypeControlChoiceChangedEvent(Event):
     def resfunc(self,events):
         choice=events.data_model[self.notation_type_control_id].data.GetString(events.data_model[self.notation_type_control_id].data.GetSelection())
         events.data_model[self.map_render_panel_id].data.SetNotationType(choice)
-#class BufferBitmapOnSizeTask(e.Task):
-#    def __init__(self,event):
-#        e.Task.__init__(self,event)
-#    def resfunc(self,events):
-#        events.CallEvent(BufferBitmapDrawBufferEvent(self.event.buffer_bitmap_id,self.event.size,self.event.images))
-#class BufferBitmapOnSizeEvent(e.Event):
-#    def __init__(self,buffer_bitmap_id,size,images):
-#        e.Event.__init__(self,BUFFER_BITMAP_ONSIZE_EVENT)
-#        self.buffer_bitmap_id=buffer_bitmap_id
-#        self.size=size
-#        self.images=images
-#class BufferBitmap:
-#    def __init__(self,parent,name='BufferBitmap'):
-#        self.parent=parent
-#        self.name=name
-#        self.events=self.parent.events
-#        self.image=wx.Bitmap(*self.size)
-#        self.images={}
-#        self.events.AddEvent(BUFFER_BITMAP_DRAW_BUFFER_EVENT)
-#        self.events.AddEvent(BUFFER_BITMAP_ONSIZE_EVENT)
-#        self.events.Bind(BUFFER_BITMAP_DRAW_BUFFER_EVENT,self.DrawBuffer)
-#        self.events.BindData(self.name,self)
-#    @property
-#    def width(self):
-#        return self.parent.GetSize()[0]
-#    @property
-#    def height(self):
-#        return self.parent.GetSize()[1]
-#    @property
-#    def size(self):
-#        return self.parent.GetSize()
-#    def AddImage(self,image,x=0,y=0):
-#        self.images[image]=(x,y)
-#    def OnSize(self,event):
-#        name_id=self.events.data_model[self.name].id
-#        self.events.CallEvent(BufferBitmapOnSizeEvent(name_id,self.size,self.images))
-#    def DrawBuffer(self,event):
-#        return BufferBitmapDrawBufferTask(event)
-#class BitmapDrawTask(Task):
-#    def __init__(self,event,drawfunc):
-#        Task.__init__(self,event)
-#        self.drawfunc=drawfunc
-#    def do(self):
-#        dc=wx.MemoryDC()
-#        image=wx.Bitmap(size)
-#        dc.SelectObject(image)
-#        dc.Clear()
-        #self.drawfunc(dc,image,self.size,self.center_x,self.center_y)
-#class BitmapDrawEvent(Event):
-#    def __init__(self,draw_event_name,size,center_x,center_y):
-#        Event.__init__(self,draw_event_name)
-#        self.size=size
-#        self.center_x=center_x
-#        self.center_y=center_y
-#class BitmapOnSizeTask(Task):
-#    def __init__(self,event):
-#        Task.__init__(self,event,self.resfunc)
-#    def resfunc(self,events):
-#        return#self.events.data_model[self.event.bitmap_id].data=wx.Bitmap(self.event.size)
-        #events.CallEvent(BitmapDrawEvent(self.event.draw_event_name))
-#class BitmapOnSizeEvent(Event):
-#    def __init__(self,onsize_event_name,bitmap_id,size,draw_event_name):
-#        Event.__init__(self,onsize_event_name)
-#        self.bitmap_id=bitmap_id
-#        self.size=size
-#        self.draw_event_name=draw_event_name
 class HexmapBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Hexmap-Bitmap')
@@ -397,36 +331,11 @@ class MapRenderPanel(RenderPanel):
         self.axis_bitmap.SetMode(choice)
         self.wxOnSize(None)
     def Draw(self,dc):
-        dc.DrawBitmap(self.axis_bitmap.image,10,self.axis_bitmap.y)
+        dc.DrawBitmap(self.axis_bitmap.image,self.axis_bitmap.x,self.axis_bitmap.y)
     def wxOnSize(self,event):
         self.axis_bitmap.OnSize()
         RenderPanel.wxOnSize(self,event)
-#        self.Bind(wx.EVT_MOUSE_EVENTS,self.UpdateMouse)
-#    def OnPaint(self,event):
-#        wx.BufferedPaintDC(self,self.buffer)
-#    def OnSize(self,event):
-#        self.buffer=wx.Bitmap(*self.GetSize())
-#        self.hexmap_bitmap.OnSize()
-#        self.axis_bitmap.OnSize()
-#        self.UpdateDrawing()
-#    def UpdateMouse(self,event):
-#        self.old_mouse_coord=self.new_mouse_coord
-#        self.new_mouse_coord=(event.GetX(),event.GetY())
-#        center_x,center_y=(self.GetSize())/2
-#        point=(self.new_mouse_coord[0]-center_x-self.offset_coord[0],
-#               self.new_mouse_coord[1]-center_y-self.offset_coord[1])
 #        self.hovered_tile=pixel_to_hex(point)
-#        if event.Dragging():
-#            self.is_dragging=True
-#            self.lock.acquire()
-#            self.offset_coord=(self.offset_coord[0]+(self.new_mouse_coord[0]-self.old_mouse_coord[0]),self.offset_coord[1]+(self.new_mouse_coord[1]-self.old_mouse_coord[1]))
-#            self.lock.release()
-#            self.UpdateDrawing()
-#        elif event.LeftDown():
-#            self.is_left_click_down=True
-#        elif event.LeftUp():
-#            self.is_dragging=False
-#            self.is_left_click_down=False
 class MainFrame(Frame):
     def __init__(self,events,title="Hexmap Demo"):
         Frame.__init__(self,events,title)
@@ -506,10 +415,6 @@ class App(BaseApp):
 #                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(0)
 #            elif tile.movement_cost==2:
 #                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(1)
-#    def SetNotationType(self,event):
-#        choice=self.main_frame.hexmap_control_panel.notation_type_control.GetString(self.main_frame.hexmap_control_panel.notation_type_control.GetSelection())
-#        self.main_frame.render_panel.notation_type=choice
-#        self.main_frame.render_panel.axis_bitmap.SetMode(choice)
 if __name__=='__main__':
     mp.freeze_support()
     app=App()
