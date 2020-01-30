@@ -365,7 +365,7 @@ class HexMapControlPanel(Panel):
 class MapRenderPanel(RenderPanel):
     def __init__(self,parent,name):
         RenderPanel.__init__(self,parent,name)
-        self.selected_tile=Cube(1,-1,0)
+        self.selected_tile=Cube(0,0,0)
         self.hovered_tile=Cube(0,0,0)
         self.notation_type='None'
         self.text_colours['X']=wx.Colour('green')
@@ -389,10 +389,10 @@ class MapRenderPanel(RenderPanel):
                  ((100)*np.sin((np.pi/180)*(60*i)))) for i in range(0,6)]
     def SetNotationType(self,choice):
         self.axis_bitmap.SetMode(choice)
-        self.wxOnSize(None)
+        self.UpdateDrawing()
     def Draw(self,dc):
         dc.DrawBitmap(self.hexmap_bitmap.image,self.hexmap_bitmap.x+self.offset_coord[0],self.hexmap_bitmap.y+self.offset_coord[1])
-        dc.DrawBitmap(self.axis_bitmap.image,self.axis_bitmap.x+self.offset_coord[0],self.axis_bitmap.y+self.offset_coord[1])
+        dc.DrawBitmap(self.axis_bitmap.image,self.axis_bitmap.x,self.axis_bitmap.y)
     def wxOnSize(self,event):
         self.hexmap_bitmap.OnSize()
         self.axis_bitmap.OnSize()
@@ -447,13 +447,8 @@ class App(BaseApp):
         hexmap_id=self.events.data_model['Hexmap'].id
         map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
         return SetSelectedTileEvent(selected_tile_x_spin_control_id,selected_tile_y_spin_control_id,selected_tile_z_spin_control_id,hexmap_id,map_render_panel_id)
-#        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_x_control.Bind(wx.EVT_SPINCTRL, self.SetSelectedTile)
-#        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_y_control.Bind(wx.EVT_SPINCTRL, self.SetSelectedTile)
-#        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_z_control.Bind(wx.EVT_SPINCTRL, self.SetSelectedTile)
 #        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.Bind(wx.EVT_RADIOBOX, self.SetSelectedTileType)
 #        self.main_frame.render_panel.Bind(wx.EVT_LEFT_DOWN,self.RenderPanelLeftMouseDown)
-    #def SetZoom(self,event):
-        #self.main_frame.render_panel.zoom=self.main_frame.hexmap_control_panel.zoom_control.GetValue()
 #    def RenderPanelLeftMouseDown(self,event):
 #        tile=self.hexmap[Cube(self.main_frame.render_panel.hovered_tile.x,self.main_frame.render_panel.hovered_tile.y,self.main_frame.render_panel.hovered_tile.z)]
 #        if tile!=False:
