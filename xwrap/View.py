@@ -60,9 +60,11 @@ class Panel(wx.Panel):
         self.main_sizer=wx.BoxSizer(orient=main_sizer_orientation)
         self.SetSizer(self.main_sizer)
 class RenderPanel(wx.Panel):
-    def __init__(self,parent):
+    def __init__(self,parent,name=''):
         wx.Panel.__init__(self,parent,size=(100,100))
         self.events=parent.events
+        self.name=name
+        self.events.BindData(self.name,self)
         self.Bind(wx.EVT_SIZE,self.wxOnSize)
         self.Bind(wx.EVT_PAINT,self.wxOnPaint)
         self.text_colours={}
