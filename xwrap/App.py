@@ -10,15 +10,15 @@ class BaseApp:
         self.events.AddEvent(e.MAIN_LOOP_EVENT)
         self.events.AddEvent(e.CLOSE_EVENT)
         self.events.Bind(e.CLOSE_EVENT,self.OnClose)
-    def OnInitialise(self,event):
+    def OnInitialise(self):
         self.events.Initialise()
-        self.Initialise(event)
+        self.Initialise()
     def MainLoop(self):
         self.running=True
         event_loop=wx.GUIEventLoop()
         wx.EventLoop.SetActive(event_loop)
         while self.running:
-            self.events.CallEvent(e.MainLoopEvent(self))
+            self.events.CallEvent(e.MAIN_LOOP_EVENT)
             while self.events.done_queue.qsize()>0:
                 output=self.events.ProcessDoneQueue()
                 if output!=None:
@@ -30,11 +30,11 @@ class BaseApp:
             event_loop.ProcessIdle()
         while event_loop.Pending():
             event_loop.Dispatch()
-    def OnClose(self,event):
+    def OnClose(self):
         self.events.running=False
         #while self.events.task_queue.qsize()>0 or self.events.done_queue.qsize()>0:
         #    time.sleep(0.1)
         self.running=False
         wx.CallAfter(self.main_frame.Destroy)
         self.events.Close()
-        return e.CloseEvent(event)
+        return e.CloseEvent()

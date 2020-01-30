@@ -69,10 +69,10 @@ class Events:
         self.events[event_key][func]=0
     def BindData(self,name,data):
         self.data_model.Bind(name,data)
-    def CallEvent(self,event):
+    def CallEvent(self,event_name):
         if self.running:
-            for func in self.events[event.name]:
-                task=func(event)
+            for func in self.events[event_name]:
+                task=func()
                 self.task_queue.put(task)
     def Close(self):
         for process in self.processes:

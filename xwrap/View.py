@@ -51,7 +51,7 @@ class Frame(wx.Frame):
         self.SetSizer(self.main_sizer)
         self.Bind(wx.EVT_CLOSE,self.OnClose)
     def OnClose(self,event):
-        self.events.CallEvent(e.CloseEvent())
+        self.events.CallEvent(e.CLOSE_EVENT)
 class Panel(wx.Panel):
     def __init__(self,parent,main_sizer_orientation=wx.HORIZONTAL):
         wx.Panel.__init__(self,parent)
@@ -90,9 +90,13 @@ class RenderPanel(wx.Panel):
         dc.Clear()
         self.Draw(dc)
 class RadioBox(wx.RadioBox):
-    def __init__(self,parent,choices=[],name=''):
+    def __init__(self,parent,name,choice_event_name,choices=[]):
         wx.RadioBox.__init__(self,parent,choices=choices)
         self.parent=parent
         self.name=name
+        self.choice_event_name=choice_event_name
         self.events=self.parent.events
         self.events.BindData(self.name,self)
+        self.Bind(wx.EVT_RADIOBOX,self.wxOnChoice)
+    def wxOnChoice(self,event):
+        self.events.CallEvent(self.choice_event_name)
