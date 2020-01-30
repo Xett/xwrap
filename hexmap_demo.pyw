@@ -11,7 +11,6 @@ from collections import OrderedDict
 #from hexmap.Coords import Cube
 #from hexmap.Coords import Axial
 #from hexmap.Maps import RadialMap
-import wx
 def pixel_to_hex(point):
     q=((2./3)*point[0])/100
     r=(((-1./3)*point[0])+(np.sqrt(3)/3)*point[1])/100
@@ -374,7 +373,6 @@ class MapRenderPanel(RenderPanel):
         self.brushes['movement_cost_2_tile']=wx.Brush(wx.Colour(139,69,19))
 #        self.hexmap_bitmap=HexmapBitmap(self)
         self.axis_bitmap=AxisBitmap(self)
-#        self.Show(True)
     @property
     def hexagon(self):
         return [(((100)*np.cos((np.pi/180)*(60*i))),
