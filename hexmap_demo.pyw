@@ -11,10 +11,19 @@ from collections import OrderedDict
 #from hexmap.Coords import Cube
 #from hexmap.Coords import Axial
 #from hexmap.Maps import RadialMap
+NOTATION_TYPE_CONTROL_CHOICE_CHANGED_EVENT='Notation-Type-Control-Choice-Changed-Event'
 def pixel_to_hex(point):
     q=((2./3)*point[0])/100
     r=(((-1./3)*point[0])+(np.sqrt(3)/3)*point[1])/100
     return round(Axial(q,r).toCube())
+class NotationTypeControlChoiceChangedEvent(Event):
+    def __init__(self,notation_type_control_id,map_render_panel_id):
+        Event.__init__(self,NOTATION_TYPE_CONTROL_CHOICE_CHANGED_EVENT,self.resfunc)
+        self.notation_type_control_id=notation_type_control_id
+        self.map_render_panel_id=map_render_panel_id
+    def resfunc(self,events):
+        choice=events.data_model[self.notation_type_control_id].data.GetString(events.data_model[self.notation_type_control_id].data.GetSelection())
+        events.data_model[self.map_render_panel_id].data.SetNotationType(choice)
 #class BufferBitmapOnSizeTask(e.Task):
 #    def __init__(self,event):
 #        e.Task.__init__(self,event)
@@ -205,11 +214,11 @@ class AxisBitmap(Bitmap):
         Yy1=ac['Y'][0][1] # Y axis line start coord y
         Yx2=ac['Y'][1][0] # Y axis line end coord x
         Yy2=ac['Y'][1][1] # Y axis line end coord y
-        Zx1=ac['Z'][0][0] # Z axis line start coord x
-        Zy1=ac['Z'][0][1] # Z axis line start coord y
-        Zx2=ac['Z'][1][0] # Z axis line end coord x
-        Zy2=ac['Z'][1][1] # Z axis line end coord y
         if self.current_mode=='Cube':
+            Zx1=ac['Z'][0][0] # Z axis line start coord x
+            Zy1=ac['Z'][0][1] # Z axis line start coord y
+            Zx2=ac['Z'][1][0] # Z axis line end coord x
+            Zy2=ac['Z'][1][1] # Z axis line end coord y
             return {
                 'X':(wx.Point(hw*Xx1,hh*Xy1),wx.Point(hw*Xx2,hh*Xy2)),
                 'Y':(wx.Point(hw*Yx1,hh*Yy1),wx.Point(hw*Yx2,hh*Yy2)),
@@ -235,10 +244,6 @@ class AxisBitmap(Bitmap):
         Yy1=ac['Y'][0][1] # Y axis line start coord y
         Yx2=ac['Y'][1][0] # Y axis line end coord x
         Yy2=ac['Y'][1][1] # Y axis line end coord y
-        Zx1=ac['Z'][0][0] # Z axis line start coord x
-        Zy1=ac['Z'][0][1] # Z axis line start coord y
-        Zx2=ac['Z'][1][0] # Z axis line end coord x
-        Zy2=ac['Z'][1][1] # Z axis line end coord y
         text_sizes=self.text_sizes(dc)
         nXx=text_sizes['-X'][0] # Negative X Axis x coordinate
         nXy=text_sizes['-X'][1] # Negative X Axis y coordinate
@@ -248,11 +253,15 @@ class AxisBitmap(Bitmap):
         nYy=text_sizes['-Y'][1] # Negative Y Axis y coordinate
         pYx=text_sizes['+Y'][0] # Positive Y Axis x coordinate
         pYy=text_sizes['+Y'][1] # Positive Y Axis y coordinate
-        nZx=text_sizes['-Z'][0] # Negative Z Axis x coordinate
-        nZy=text_sizes['-Z'][1] # Negative Z Axis y coordinate
-        pZx=text_sizes['+Z'][0] # Positive Z Axis x coordinate
-        pZy=text_sizes['+Z'][1] # Positive Z Axis y coordinate
         if self.current_mode=='Cube':
+            Zx1=ac['Z'][0][0] # Z axis line start coord x
+            Zy1=ac['Z'][0][1] # Z axis line start coord y
+            Zx2=ac['Z'][1][0] # Z axis line end coord x
+            Zy2=ac['Z'][1][1] # Z axis line end coord y
+            nZx=text_sizes['-Z'][0] # Negative Z Axis x coordinate
+            nZy=text_sizes['-Z'][1] # Negative Z Axis y coordinate
+            pZx=text_sizes['+Z'][0] # Positive Z Axis x coordinate
+            pZy=text_sizes['+Z'][1] # Positive Z Axis y coordinate
             return {
                 'X':(wx.Point((hw*Xx1)+cw,(hh*Xy1)+ch-(nXy/2)),
                     wx.Point((hw*Xx2)+cw-pXx-(pXx/2),(hh*Xy2)+ch-(pXy/2))),
@@ -308,7 +317,14 @@ class AxisBitmap(Bitmap):
         line_axis=self.line_axis
         text_axis=self.text_axis(dc)
         for axis in ['X','Y']:
-            dc.SetPen(self.pen_axis[axis])
+            pen=None
+            if axis=='X':
+                pen=wx.Pen(wx.Colour('green'))
+            elif axis=='Y':
+                pen=wx.Pen(wx.Colour('red'))
+            else:
+                pen=wx.Pen(wx.Colour('blue'))
+            dc.SetPen(pen)
             dc.DrawLines(line_axis[axis],xoffset=self.center_x,yoffset=self.center_y)
             dc.DrawText('-{}'.format(axis),text_axis[axis][0])
             dc.DrawText('+{}'.format(axis),text_axis[axis][1])
@@ -348,13 +364,13 @@ class HexMapControlPanel(Panel):
         self.radius_sizer.Add(self.radius_label,1,wx.EXPAND)
         self.radius_sizer.Add(self.radius_control,1,wx.EXPAND)
         self.main_sizer.Add(self.radius_sizer,0,wx.EXPAND)
-        self.notation_type_control=RadioBox(self,choices=['None','Cube','Axial'],name='Notation-Type-Control')
+        self.notation_type_control=RadioBox(self,'Notation-Type-Control',NOTATION_TYPE_CONTROL_CHOICE_CHANGED_EVENT,choices=['None','Cube','Axial'])
         self.main_sizer.Add(self.notation_type_control,0,wx.EXPAND)
         self.selected_tile_control_panel=SelectedTileControlPanel(self)
         self.main_sizer.Add(self.selected_tile_control_panel,0,wx.EXPAND)
 class MapRenderPanel(RenderPanel):
-    def __init__(self,parent):
-        RenderPanel.__init__(self,parent)
+    def __init__(self,parent,name):
+        RenderPanel.__init__(self,parent,name)
 #        self.selected_tile=Cube(0,0,0)
 #        self.hovered_tile=Cube(0,0,0)
         self.notation_type='None'
@@ -377,6 +393,9 @@ class MapRenderPanel(RenderPanel):
     def hexagon(self):
         return [(((100)*np.cos((np.pi/180)*(60*i))),
                  ((100)*np.sin((np.pi/180)*(60*i)))) for i in range(0,6)]
+    def SetNotationType(self,choice):
+        self.axis_bitmap.SetMode(choice)
+        self.wxOnSize(None)
     def Draw(self,dc):
         dc.DrawBitmap(self.axis_bitmap.image,10,self.axis_bitmap.y)
     def wxOnSize(self,event):
@@ -435,7 +454,7 @@ class MainFrame(Frame):
         Frame.__init__(self,events,title)
         self.CreateStatusBar()
         self.hexmap_control_panel=HexMapControlPanel(self)
-        self.render_panel=MapRenderPanel(self)
+        self.render_panel=MapRenderPanel(self,'Map-Render-Panel')
         self.inner_sizer=wx.BoxSizer()
         self.main_sizer.Add(self.inner_sizer,1,wx.EXPAND)
         self.inner_sizer.Add(self.hexmap_control_panel,0,wx.EXPAND)
@@ -448,11 +467,15 @@ class App(BaseApp):
         self.radius=1
         #self.hexmap=RadialMap(self.radius)
         self.main_frame=MainFrame(self.events)
-    def Initialise(self,event):
+        self.events.AddEvent(NOTATION_TYPE_CONTROL_CHOICE_CHANGED_EVENT)
+        self.events.Bind(NOTATION_TYPE_CONTROL_CHOICE_CHANGED_EVENT,self.NotationTypeControlChoiceChanged)
+    def Initialise(self):
         self.main_frame.Show(True)
         self.MainLoop()
-#        self.main_frame.init(self.hexmap,self.lock)
-#        self.draw_thread=threading.Thread(target=self.drawLoop)
+    def NotationTypeControlChoiceChanged(self):
+        notation_type_control_id=self.events.data_model['Notation-Type-Control'].id
+        map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
+        return NotationTypeControlChoiceChangedEvent(notation_type_control_id,map_render_panel_id)
 #        self.main_frame.hexmap_control_panel.radius_control.Bind(wx.EVT_SPINCTRL, self.SetRadius)
         #self.main_frame.hexmap_control_panel.zoom_control.Bind(wx.EVT_SPINCTRL, self.SetZoom)
 #        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_x_control.Bind(wx.EVT_SPINCTRL, self.SetSelectedTile)
@@ -512,6 +535,6 @@ class App(BaseApp):
 if __name__=='__main__':
     mp.freeze_support()
     app=App()
-    app.events.CallEvent(InitialiseEvent())
+    app.events.CallEvent(INITIALISE_EVENT)
     del app
 exit()
