@@ -82,37 +82,6 @@ def pixel_to_hex(point):
 #        self.bitmap_id=bitmap_id
 #        self.size=size
 #        self.draw_event_name=draw_event_name
-class Bitmap:
-    def __init__(self,parent,name,width=10,height=10,x=0,y=0):
-        self.parent=parent
-        self.events=self.parent.events
-        self.name=name
-        self.width=width
-        self.height=height
-        self.x=x
-        self.y=y
-        self.draw_event_name='{}-Draw-Event'.format(self.name)
-        self.onsize_event_name='{}-OnSize-Event'.format(self.name)
-        self.events.AddEvent(self.draw_event_name)
-        self.events.Bind(self.draw_event_name,self.DrawEvent)
-        self.events.AddEvent(self.onsize_event_name)
-        self.events.Bind(self.onsize_event_name,self.OnSize)
-        self.image=wx.Bitmap(self.size)
-    @property
-    def size(self):
-        return (self.width,self.height)
-    @property
-    def center_x(self):
-        return self.size[0]/2
-    @property
-    def center_y(self):
-        return self.size[1]/2
-    def Draw(dc,image,size,center_x,center_y):
-        return
-    def OnSize(self,event):
-        return BitmapOnSizeTask(event,self.name)
-    def DrawEvent(self,event):
-        return BitmapDrawTask(event,self.Draw)
 class HexmapBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Hexmap-Bitmap')
@@ -178,7 +147,7 @@ class HexmapBitmap(Bitmap):
 class AxisBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Axis-Bitmap')
-        self.current_mode='None'
+        self.SetMode('None')
     @property
     def width(self):
         return self.parent.GetSize()[0]//8
@@ -195,13 +164,19 @@ class AxisBitmap(Bitmap):
     def y(self):
         return self.parent.GetSize()[1]-self.size[1]
     @property
-    def center_x(self):
-        return self.size[0]/2
-    @property
-    def center_y(self):
-        return self.size[1]/2
-    @property
-    def text_sizes(self):
+    def axis_coords(self):
+        if self.current_mode=='Cube':
+            return {
+                'X':{0:(np.cos((np.pi/180)*180),np.sin((np.pi/180)*180)),1:(np.cos((np.pi/180)*0),np.sin((np.pi/180)*0))},
+                'Y':{0:(np.cos((np.pi/180)*240),np.sin((np.pi/180)*240)),1:(np.cos((np.pi/180)*60),np.sin((np.pi/180)*60))},
+                'Z':{0:(np.cos((np.pi/180)*300),np.sin((np.pi/180)*300)),1:(np.cos((np.pi/180)*120),np.sin((np.pi/180)*120))}
+            }
+        elif self.current_mode=='Axial':
+            return {
+                'X':{0:(np.cos((np.pi/180)*180),np.sin((np.pi/180)*180)),1:(np.cos((np.pi/180)*0),np.sin((np.pi/180)*0))},
+                'Y':{0:(np.cos((np.pi/180)*240),np.sin((np.pi/180)*240)),1:(np.cos((np.pi/180)*60),np.sin((np.pi/180)*60))}
+            }
+    def text_sizes(self,dc):
         if self.current_mode=='Cube':
             return {
                 '+X':dc.GetTextExtent('+X'),
@@ -220,110 +195,195 @@ class AxisBitmap(Bitmap):
             }
     @property
     def line_axis(self):
+        hw=self.size[0]/2 #half width
+        hh=self.size[1]/2 #half height
+        ac=self.axis_coords
+        Xx1=ac['X'][0][0] # X axis line start coord x
+        Xy1=ac['X'][0][1] # X axis line start coord y
+        Xx2=ac['X'][1][0] # X axis line end coord x
+        Xy2=ac['X'][1][1] # X axis line end coord y
+        Yx1=ac['Y'][0][0] # Y axis line start coord x
+        Yy1=ac['Y'][0][1] # Y axis line start coord y
+        Yx2=ac['Y'][1][0] # Y axis line end coord x
+        Yy2=ac['Y'][1][1] # Y axis line end coord y
+        Zx1=ac['Z'][0][0] # Z axis line start coord x
+        Zy1=ac['Z'][0][1] # Z axis line start coord y
+        Zx2=ac['Z'][1][0] # Z axis line end coord x
+        Zy2=ac['Z'][1][1] # Z axis line end coord y
         if self.current_mode=='Cube':
             return {
-                'X':(wx.Point((self.size[0]/2)*np.cos((np.pi/180)*180),(self.size[1]/2)*np.sin((np.pi/180)*180)),
-                    wx.Point((self.size[0]/2)*np.cos((np.pi/180)*0),(self.size[1]/2)*np.sin((np.pi/180)*0))),
-                'Y':(wx.Point((self.size[0]/2)*np.cos((np.pi/180)*210),(self.size[1]/2)*np.sin((np.pi/180)*210)),
-                    wx.Point((self.size[0]/2)*np.cos((np.pi/180)*30),(self.size[1]/2)*np.sin((np.pi/180)*30))),
-                'Z':(wx.Point((self.size[0]/2)*np.cos((np.pi/180)*330),(self.size[1]/2)*np.sin((np.pi/180)*330)),
-                    wx.Point((self.size[0]/2)*np.cos((np.pi/180)*150),(self.size[1]/2)*np.sin((np.pi/180)*150)))
+                'X':(wx.Point(hw*Xx1,hh*Xy1),wx.Point(hw*Xx2,hh*Xy2)),
+                'Y':(wx.Point(hw*Yx1,hh*Yy1),wx.Point(hw*Yx2,hh*Yy2)),
+                'Z':(wx.Point(hw*Zx1,hh*Zy1), wx.Point(hw*Zx2,hh*Zy2))
             }
         elif self.current_mode=='Axial':
             return {
-                'X':(wx.Point((self.size[0]/2)*np.cos((np.pi/180)*180),(self.size[1]/2)*np.sin((np.pi/180)*180)),
-                    wx.Point((self.size[0]/2)*np.cos((np.pi/180)*0),(self.size[1]/2)*np.sin((np.pi/180)*0))),
-                'Y':(wx.Point((self.size[0]/2)*np.cos((np.pi/180)*210),(self.size[1]/2)*np.sin((np.pi/180)*210)),
-                    wx.Point((self.size[0]/2)*np.cos((np.pi/180)*30),(self.size[1]/2)*np.sin((np.pi/180)*30)))
+                'X':(wx.Point(hw*Xx1,hh*Xy1),wx.Point(hw*Xx2,hh*Xy2)),
+                'Y':(wx.Point(hw*Yx1,hh*Yy1),wx.Point(hw*Yx2,hh*Yy2))
             }
-    @property
-    def text_axis(self):
+        return
+    def text_axis(self,dc):
+        hw=self.size[0]/2 #half width
+        hh=self.size[1]/2 #half height
+        cw=self.size[0]/2 #center width
+        ch=self.size[1]/2 #center height
+        ac=self.axis_coords
+        Xx1=ac['X'][0][0] # X axis line start coord x
+        Xy1=ac['X'][0][1] # X axis line start coord y
+        Xx2=ac['X'][1][0] # X axis line end coord x
+        Xy2=ac['X'][1][1] # X axis line end coord y
+        Yx1=ac['Y'][0][0] # Y axis line start coord x
+        Yy1=ac['Y'][0][1] # Y axis line start coord y
+        Yx2=ac['Y'][1][0] # Y axis line end coord x
+        Yy2=ac['Y'][1][1] # Y axis line end coord y
+        Zx1=ac['Z'][0][0] # Z axis line start coord x
+        Zy1=ac['Z'][0][1] # Z axis line start coord y
+        Zx2=ac['Z'][1][0] # Z axis line end coord x
+        Zy2=ac['Z'][1][1] # Z axis line end coord y
+        text_sizes=self.text_sizes(dc)
+        nXx=text_sizes['-X'][0] # Negative X Axis x coordinate
+        nXy=text_sizes['-X'][1] # Negative X Axis y coordinate
+        pXx=text_sizes['+X'][0] # Positive X Axis x coordinate
+        pXy=text_sizes['+X'][1] # Positive X Axis y coordinate
+        nYx=text_sizes['-Y'][0] # Negative Y Axis x coordinate
+        nYy=text_sizes['-Y'][1] # Negative Y Axis y coordinate
+        pYx=text_sizes['+Y'][0] # Positive Y Axis x coordinate
+        pYy=text_sizes['+Y'][1] # Positive Y Axis y coordinate
+        nZx=text_sizes['-Z'][0] # Negative Z Axis x coordinate
+        nZy=text_sizes['-Z'][1] # Negative Z Axis y coordinate
+        pZx=text_sizes['+Z'][0] # Positive Z Axis x coordinate
+        pZy=text_sizes['+Z'][1] # Positive Z Axis y coordinate
         if self.current_mode=='Cube':
             return {
-                'X':(wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*180))+self.center_x,((self.size[1]/2)*np.sin((np.pi/180)*180))+self.center_y-(text_sizes['-X'][1]/2)),
-                    wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*0))+self.center_x-(text_sizes['+X'][0]),((self.size[1]/2)*np.sin((np.pi/180)*0))+self.center_y-(text_sizes['+X'][1]/2))),
-                'Y':(wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*30))+self.center_x-text_sizes['-Y'][0]-(text_sizes['-Y'][0]/2),((self.size[1]/2)*np.sin((np.pi/180)*30))+self.center_y-text_sizes['-Y'][1]),
-                    wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*210))+self.center_x,((self.size[1]/2)*np.sin((np.pi/180)*210))+self.center_y)),
-                'Z':(wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*330))+self.center_x-text_sizes['-Z'][0],((self.size[1]/2)*np.sin((np.pi/180)*330))+self.center_y),
-                    wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*150))+self.center_x,((self.size[1]/2)*np.sin((np.pi/180)*150))+self.center_y-text_sizes['+Z'][1]))
+                'X':(wx.Point((hw*Xx1)+cw,(hh*Xy1)+ch-(nXy/2)),
+                    wx.Point((hw*Xx2)+cw-pXx-(pXx/2),(hh*Xy2)+ch-(pXy/2))),
+                'Y':(wx.Point((hw*Yx2)+cw-nYx-(nYx/2),(hh*Yy2)+ch-pYy),
+                    wx.Point((hw*Yx1)+cw,(hh*Yy1)+ch)),
+                'Z':(wx.Point((hw*Zx1)+cw-nZx,(hh*Zy1)+ch),
+                    wx.Point((hw*Zx2)+cw,(hh*Zy2)+ch-pZy))
             }
         elif self.current_mode=='Axial':
             return {
-                'X':(wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*180))+self.center_x,((self.size[1]/2)*np.sin((np.pi/180)*180))+self.center_y-(text_sizes['-X'][1]/2)),
-                    wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*0))+self.center_x-(text_sizes['+X'][0]),((self.size[1]/2)*np.sin((np.pi/180)*0))+self.center_y-(text_sizes['+X'][1]/2))),
-                'Y':(wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*30))+self.center_x-text_sizes['-Y'][0]-(text_sizes['-Y'][0]/2),((self.size[1]/2)*np.sin((np.pi/180)*30))+self.center_y-text_sizes['-Y'][1]),
-                    wx.Point(((self.size[0]/2)*np.cos((np.pi/180)*210))+self.center_x,((self.size[1]/2)*np.sin((np.pi/180)*210))+self.center_y))
+                'X':(wx.Point((hw*Xx1)+cw,(hh*Xy1)+ch-(nXy/2)),
+                    wx.Point((hw*Xx2)+cw-pXx,(hh*Xy2)+ch-(pXy/2))),
+                'Y':(wx.Point((hw*Yx1)+cw-nYx-(nYx/2),(hh*Yy1)+ch-nYy),
+                    wx.Point((hw*Yx2)+cw,(hh*Yy2)+ch))
             }
-    @property
-    def pen_axis(self):
-        if self.current_mode=='Cube':
-            return {
-                'X':self.parent.pens['x'],
-                'Y':self.parent.pens['y'],
-                'Z':self.parent.pens['z']
-            }
-        elif self.current_mode=='Axial':
-            return {
-                'X':self.parent.pens['x'],
-                'Y':self.parent.pens['y']
-            }
-    def OnSize(self):
-        self.axis_image=wx.Bitmap(self.size)
+    def Draw(self):
         if self.current_mode=='Cube':
             self.DrawCubic()
         elif self.current_mode=='Axial':
             self.DrawAxial()
         else:
-            dc=wx.MemoryDC()
-            dc.SelectObject(self.axis_image)
-            dc.Clear()
+            self.DrawNone()
+    def OnSize(self):
+        self.image=wx.Bitmap(self.size)
+        self.Draw()
     def SetMode(self,choice):
         self.current_mode=choice
         self.OnSize()
     def DrawCubic(self):
         dc=wx.MemoryDC()
-        dc.SelectObject(self.axis_image)
+        dc.SelectObject(self.image)
+        dc.SetBackground(self.parent.brushes['background'])
         dc.Clear()
+        line_axis=self.line_axis
+        text_axis=self.text_axis(dc)
         for axis in ['X','Y','Z']:
-            dc.SetPen(pen_axis[axis])
+            pen=None
+            if axis=='X':
+                pen=wx.Pen(wx.Colour('green'))
+            elif axis=='Y':
+                pen=wx.Pen(wx.Colour('red'))
+            else:
+                pen=wx.Pen(wx.Colour('blue'))
+            dc.SetPen(pen)
             dc.DrawLines(line_axis[axis],xoffset=self.center_x,yoffset=self.center_y)
             dc.DrawText('-{}'.format(axis),text_axis[axis][0])
             dc.DrawText('+{}'.format(axis),text_axis[axis][1])
     def DrawAxial(self):
         dc=wx.MemoryDC()
-        dc.SelectObject(self.axis_image)
+        dc.SelectObject(self.image)
+        dc.SetBackground(self.parent.brushes['background'])
         dc.Clear()
+        line_axis=self.line_axis
+        text_axis=self.text_axis(dc)
         for axis in ['X','Y']:
-            dc.SetPen(pen_axis[axis])
+            dc.SetPen(self.pen_axis[axis])
             dc.DrawLines(line_axis[axis],xoffset=self.center_x,yoffset=self.center_y)
             dc.DrawText('-{}'.format(axis),text_axis[axis][0])
             dc.DrawText('+{}'.format(axis),text_axis[axis][1])
-#class MapRenderPanel(RenderPanel):
-#    def __init__(self,parent):
-#        RenderPanel.__init__(self,parent)
+    def DrawNone(self):
+        dc=wx.MemoryDC()
+        dc.SelectObject(self.image)
+        dc.SetBackground(self.parent.brushes['background'])
+        dc.Clear()
+class SelectedTileControlPanel(Panel):
+    def __init__(self,parent):
+        Panel.__init__(self,parent,main_sizer_orientation=wx.VERTICAL)
+        self.selected_tile_label=wx.StaticText(self,label='Selected Tile')
+        self.selected_tile_x_label=wx.StaticText(self,label='X:')
+        self.selected_tile_x_control=wx.SpinCtrl(self,min=-100)
+        self.selected_tile_y_label=wx.StaticText(self,label='Y:')
+        self.selected_tile_y_control=wx.SpinCtrl(self,min=-100)
+        self.selected_tile_z_label=wx.StaticText(self,label='Z:')
+        self.selected_tile_z_control=wx.SpinCtrl(self,min=-100)
+        self.selected_tile_coord_sizer=wx.BoxSizer()
+        self.selected_tile_coord_sizer.Add(self.selected_tile_x_label,0,wx.EXPAND)
+        self.selected_tile_coord_sizer.Add(self.selected_tile_x_control,0,wx.EXPAND)
+        self.selected_tile_coord_sizer.Add(self.selected_tile_y_label,0,wx.EXPAND)
+        self.selected_tile_coord_sizer.Add(self.selected_tile_y_control,0,wx.EXPAND)
+        self.selected_tile_coord_sizer.Add(self.selected_tile_z_label,0,wx.EXPAND)
+        self.selected_tile_coord_sizer.Add(self.selected_tile_z_control,0,wx.EXPAND)
+        self.main_sizer.Add(self.selected_tile_label,0,wx.EXPAND)
+        self.main_sizer.Add(self.selected_tile_coord_sizer,0,wx.EXPAND)
+        self.selected_tile_type_control=wx.RadioBox(self,choices=['Movement Cost 1','Movement Cost 2','Not Passable'])
+        self.main_sizer.Add(self.selected_tile_type_control,0,wx.EXPAND)
+class HexMapControlPanel(Panel):
+    def __init__(self,parent):
+        Panel.__init__(self,parent,main_sizer_orientation=wx.VERTICAL)
+        self.events=self.parent.events
+        self.radius_label=wx.StaticText(self,label='Radius:')
+        self.radius_control=wx.SpinCtrl(self,value='1')
+        self.radius_sizer=wx.BoxSizer()
+        self.radius_sizer.Add(self.radius_label,1,wx.EXPAND)
+        self.radius_sizer.Add(self.radius_control,1,wx.EXPAND)
+        self.main_sizer.Add(self.radius_sizer,0,wx.EXPAND)
+        self.notation_type_control=RadioBox(self,choices=['None','Cube','Axial'],name='Notation-Type-Control')
+        self.main_sizer.Add(self.notation_type_control,0,wx.EXPAND)
+        self.selected_tile_control_panel=SelectedTileControlPanel(self)
+        self.main_sizer.Add(self.selected_tile_control_panel,0,wx.EXPAND)
+class MapRenderPanel(RenderPanel):
+    def __init__(self,parent):
+        RenderPanel.__init__(self,parent)
 #        self.selected_tile=Cube(0,0,0)
 #        self.hovered_tile=Cube(0,0,0)
-#        self.notation_type='None'
-#        self.text_colours['X']=wx.Colour('green')
-#        self.text_colours['Y']=wx.Colour('pink')
-#        self.text_colours['Z']=wx.Colour(30,144,155)
-#        self.pens['x']=wx.Pen('green')
-#        self.pens['y']=wx.Pen('pink')
-#        self.pens['z']=wx.Pen(wx.Colour(30,144,255))
-#        self.pens['q']=wx.Pen('green')
-#        self.pens['r']=wx.Pen('pink')
-#        self.pens['hex_outline']=wx.Pen('black')
-#        self.brushes['background']=wx.Brush('white')
-#        self.brushes['not_passable_tile']=wx.Brush(wx.Colour(0,0,0))
-#        self.brushes['movement_cost_1_tile']=wx.Brush(wx.Colour(255,255,255))
-#        self.brushes['movement_cost_2_tile']=wx.Brush(wx.Colour(139,69,19))
-#        self.Show(True)
-#    @property
-#    def hexagon(self):
-#        return [(((100)*np.cos((np.pi/180)*(60*i))),
-#                 ((100)*np.sin((np.pi/180)*(60*i)))) for i in range(0,6)]
+        self.notation_type='None'
+        self.text_colours['X']=wx.Colour('green')
+        self.text_colours['Y']=wx.Colour('pink')
+        self.text_colours['Z']=wx.Colour(30,144,155)
+        self.pens['x']=wx.Pen('green')
+        self.pens['y']=wx.Pen('pink')
+        self.pens['z']=wx.Pen(wx.Colour(30,144,255))
+        self.pens['q']=wx.Pen('green')
+        self.pens['r']=wx.Pen('pink')
+        self.pens['hex_outline']=wx.Pen('black')
+        self.brushes['background']=wx.Brush('white')
+        self.brushes['not_passable_tile']=wx.Brush(wx.Colour(0,0,0))
+        self.brushes['movement_cost_1_tile']=wx.Brush(wx.Colour(255,255,255))
+        self.brushes['movement_cost_2_tile']=wx.Brush(wx.Colour(139,69,19))
 #        self.hexmap_bitmap=HexmapBitmap(self)
-#        self.axis_bitmap=AxisBitmap(self)
+        self.axis_bitmap=AxisBitmap(self)
+#        self.Show(True)
+    @property
+    def hexagon(self):
+        return [(((100)*np.cos((np.pi/180)*(60*i))),
+                 ((100)*np.sin((np.pi/180)*(60*i)))) for i in range(0,6)]
+    def Draw(self,dc):
+        dc.DrawBitmap(self.axis_bitmap.image,10,self.axis_bitmap.y)
+    def wxOnSize(self,event):
+        self.axis_bitmap.OnSize()
+        RenderPanel.wxOnSize(self,event)
 #    def init(self,hexmap,lock):
 #        self.hexmap=hexmap
 #        self.lock=lock
@@ -372,70 +432,12 @@ class AxisBitmap(Bitmap):
 #        elif event.LeftUp():
 #            self.is_dragging=False
 #            self.is_left_click_down=False
-class SelectedTileControlPanel(Panel):
-    def __init__(self,parent):
-        Panel.__init__(self,parent,main_sizer_orientation=wx.VERTICAL)
-        self.selected_tile_label=wx.StaticText(self,label='Selected Tile')
-        self.selected_tile_x_label=wx.StaticText(self,label='X:')
-        self.selected_tile_x_control=wx.SpinCtrl(self,min=-100)
-        self.selected_tile_y_label=wx.StaticText(self,label='Y:')
-        self.selected_tile_y_control=wx.SpinCtrl(self,min=-100)
-        self.selected_tile_z_label=wx.StaticText(self,label='Z:')
-        self.selected_tile_z_control=wx.SpinCtrl(self,min=-100)
-        self.selected_tile_coord_sizer=wx.BoxSizer()
-        self.selected_tile_coord_sizer.Add(self.selected_tile_x_label,0,wx.EXPAND)
-        self.selected_tile_coord_sizer.Add(self.selected_tile_x_control,0,wx.EXPAND)
-        self.selected_tile_coord_sizer.Add(self.selected_tile_y_label,0,wx.EXPAND)
-        self.selected_tile_coord_sizer.Add(self.selected_tile_y_control,0,wx.EXPAND)
-        self.selected_tile_coord_sizer.Add(self.selected_tile_z_label,0,wx.EXPAND)
-        self.selected_tile_coord_sizer.Add(self.selected_tile_z_control,0,wx.EXPAND)
-        self.main_sizer.Add(self.selected_tile_label,0,wx.EXPAND)
-        self.main_sizer.Add(self.selected_tile_coord_sizer,0,wx.EXPAND)
-        self.selected_tile_type_control=wx.RadioBox(self,choices=['Movement Cost 1','Movement Cost 2','Not Passable'])
-        self.main_sizer.Add(self.selected_tile_type_control,0,wx.EXPAND)
-class HexMapControlPanel(Panel):
-    def __init__(self,parent):
-        Panel.__init__(self,parent,main_sizer_orientation=wx.VERTICAL)
-        self.radius_label=wx.StaticText(self,label='Radius:')
-        self.radius_control=wx.SpinCtrl(self,value='1')
-        self.radius_sizer=wx.BoxSizer()
-        self.radius_sizer.Add(self.radius_label,1,wx.EXPAND)
-        self.radius_sizer.Add(self.radius_control,1,wx.EXPAND)
-        self.main_sizer.Add(self.radius_sizer,0,wx.EXPAND)
-        self.notation_type_control=wx.RadioBox(self,choices=['None','Cube','Axial'])
-        self.main_sizer.Add(self.notation_type_control,0,wx.EXPAND)
-        self.selected_tile_control_panel=SelectedTileControlPanel(self)
-        self.main_sizer.Add(self.selected_tile_control_panel,0,wx.EXPAND)
-class RenderPanel(wx.Panel):
-    def __init__(self,parent):
-        wx.Panel.__init__(self,parent,size=(100,100))
-        self.events=parent.events
-        self.Bind(wx.EVT_SIZE,self.wxOnSize)
-        self.Bind(wx.EVT_PAINT,self.wxOnPaint)
-        #self.buffer_image=wx.Bitmap((100,100))
-    def wxOnSize(self,events):
-        self.buffer_image=wx.Bitmap(*self.ClientSize)
-        self.UpdateDrawing()
-    def wxOnPaint(self,events):
-        wx.BufferedPaintDC(self,self.buffer_image)
-    def UpdateDrawing(self):
-        dc=wx.MemoryDC()
-        try:
-            dc.SelectObject(self.buffer_image)
-        except:
-            self.wxOnSize(None)
-        self.Draw(dc)
-        self.Refresh(eraseBackground=False)
-        self.Update()
-    def Draw(self,dc):
-        dc.SetBackground(wx.Brush(wx.Colour('white')))
-        dc.Clear()
 class MainFrame(Frame):
     def __init__(self,events,title="Hexmap Demo"):
         Frame.__init__(self,events,title)
         self.CreateStatusBar()
         self.hexmap_control_panel=HexMapControlPanel(self)
-        self.render_panel=RenderPanel(self)
+        self.render_panel=MapRenderPanel(self)
         self.inner_sizer=wx.BoxSizer()
         self.main_sizer.Add(self.inner_sizer,1,wx.EXPAND)
         self.inner_sizer.Add(self.hexmap_control_panel,0,wx.EXPAND)
