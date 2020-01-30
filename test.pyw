@@ -1,6 +1,6 @@
-from xwrap.App import BaseApp
-from xwrap.Events import InitialiseEvent
-from xwrap.View import Frame
+from xwrap.App import *
+from xwrap.Events import *
+from xwrap.View import *
 import multiprocessing as mp
 import wx
 import xwrap.Events as e
@@ -41,20 +41,20 @@ class MainFrame(Frame):
     def StartButton(self,event):
         for i in range(self.events.num_processes):
             id=self.events.data_model['MainFrame_OutputTextControl'].id
-            self.events.CallEvent(ProcessTasksEvent(id))
+            self.events.CallEvent(PROCESS_TASKS_EVENT)
 class TestApp(BaseApp):
     def __init__(self):
         BaseApp.__init__(self)
         self.events.AddEvent(PROCESS_TASKS_EVENT)
         self.events.Bind(PROCESS_TASKS_EVENT,self.ProcessTasks)
         self.main_frame=MainFrame(self.events)
-    def Initialise(self,event):
+    def Initialise(self):
         self.main_frame.Show(True)
         self.MainLoop()
-    def ProcessTasks(self,event):
+    def ProcessTasks(self):
         id=self.events.data_model['MainFrame_OutputTextControl'].id
         return ProcessTasksEvent(id)
 if __name__=="__main__":
     mp.freeze_support()
     test_app=TestApp()
-    test_app.events.CallEvent(InitialiseEvent())
+    test_app.events.CallEvent(INITIALISE_EVENT)
