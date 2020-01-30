@@ -401,15 +401,6 @@ class MapRenderPanel(RenderPanel):
     def wxOnSize(self,event):
         self.axis_bitmap.OnSize()
         RenderPanel.wxOnSize(self,event)
-#    def init(self,hexmap,lock):
-#        self.hexmap=hexmap
-#        self.lock=lock
-#        self.dc=Observable(wx.MemoryDC())
-#        self.dc.addCallback(self.Draw)
-#        self.OnSize(None)
-#        self.Draw(self.dc.get())
-#        self.Bind(wx.EVT_SIZE,self.OnSize)
-#        self.Bind(wx.EVT_PAINT,self.OnPaint)
 #        self.Bind(wx.EVT_MOUSE_EVENTS,self.UpdateMouse)
 #    def OnPaint(self,event):
 #        wx.BufferedPaintDC(self,self.buffer)
@@ -418,19 +409,6 @@ class MapRenderPanel(RenderPanel):
 #        self.hexmap_bitmap.OnSize()
 #        self.axis_bitmap.OnSize()
 #        self.UpdateDrawing()
-#    def Draw(self,dc):
-#        dc.SelectObject(self.buffer)
-#        dc.SetBackground(self.brushes['background'])
-#        dc.Clear()
-#        self.lock.acquire()
-#        self.hexmap_bitmap.DrawHexmap()
-#        self.hexmap_bitmap.Draw(dc)
-#        self.axis_bitmap.Draw(dc)
-#        self.lock.release()
-#    def UpdateDrawing(self):
-#        self.dc.set(wx.MemoryDC())
-#        self.Refresh(eraseBackground=False)
-#        self.Update()
 #    def UpdateMouse(self,event):
 #        self.old_mouse_coord=self.new_mouse_coord
 #        self.new_mouse_coord=(event.GetX(),event.GetY())
