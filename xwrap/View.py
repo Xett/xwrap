@@ -36,6 +36,8 @@ class Bitmap:
     def OnSize(self):
         self.image=wx.Bitmap(self.size)
         self.Draw()
+    def DrawToBuffer(self,buffer_device_context):
+        buffer_device_context.DrawBitmap(self.image,self.x,self.y)
 class Frame(wx.Frame):
     def __init__(self,events,title='Frame',size=(1920,1080)):
         wx.Frame.__init__(self,None,-1,title,size)

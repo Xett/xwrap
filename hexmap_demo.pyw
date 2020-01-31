@@ -195,6 +195,8 @@ class HexmapBitmap(Bitmap):
                 }
                 dc.DrawText(str(x),axial_coordinates['X'][0],axial_coordinates['X'][1])
                 dc.DrawText(str(y),axial_coordinates['Y'][0],axial_coordinates['Y'][1])
+    def DrawToBuffer(self,buffer_device_context):
+        buffer_device_context.DrawBitmap(self.image,self.x+self.parent.offset_coord[0],self.y+self.parent.offset_coord[1])
 class AxisBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Axis-Bitmap')
@@ -437,8 +439,8 @@ class MapRenderPanel(RenderPanel):
         self.axis_bitmap.SetMode(choice)
         self.UpdateDrawing()
     def Draw(self,dc):
-        dc.DrawBitmap(self.hexmap_bitmap.image,self.hexmap_bitmap.x+self.offset_coord[0],self.hexmap_bitmap.y+self.offset_coord[1])
-        dc.DrawBitmap(self.axis_bitmap.image,self.axis_bitmap.x,self.axis_bitmap.y)
+        self.hexmap_bitmap.DrawToBuffer(dc)
+        self.axis_bitmap.DrawToBuffer(dc)
     def wxOnSize(self,event):
         self.hexmap_bitmap.OnSize()
         self.axis_bitmap.OnSize()
