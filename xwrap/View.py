@@ -1,8 +1,5 @@
 import wx
 from . import Events as e
-MAP_RENDER_PANEL_MOUSE_LEFT_DOWN_EVENT='Map-Render-Panel-Mouse-Left-Down-Event'
-MAP_RENDER_PANEL_MOUSE_LEFT_UP_EVENT='Map-Render-Panel-Mouse-Left-Up-Event'
-MAP_RENDER_PANEL_MOUSE_MOTION='Map-Render-Panel-Mouse-Motion'
 class Bitmap:
     def __init__(self,parent,name,width=10,height=10,x=0,y=0):
         self.parent=parent
@@ -60,13 +57,16 @@ class RenderPanel(wx.Panel):
         wx.Panel.__init__(self,parent,size=(100,100))
         self.events=parent.events
         self.name=name
+        self.mouse_left_down_event_name='{}-Mouse-Left-Down-Event'.format(self.name)
+        self.mouse_left_up_event_name='{}-Mouse-Left-Up-Event'.format(self.name)
+        self.mouse_motion_event_name='{}-Mouse-Motion-Event'.format(self.name)
         self.new_mouse_coord=(0,0)
         self.old_mouse_coord=(0,0)
         self.offset_coord=(0,0)
         self.events.BindData(self.name,self)
-        self.events.AddEvent(MAP_RENDER_PANEL_MOUSE_LEFT_DOWN_EVENT)
-        self.events.AddEvent(MAP_RENDER_PANEL_MOUSE_LEFT_UP_EVENT)
-        self.events.AddEvent(MAP_RENDER_PANEL_MOUSE_MOTION)
+        self.events.AddEvent(self.mouse_left_down_event_name)
+        self.events.AddEvent(self.mouse_left_up_event_name)
+        self.events.AddEvent(self.mouse_motion_event_name)
         self.Bind(wx.EVT_SIZE,self.wxOnSize)
         self.Bind(wx.EVT_PAINT,self.wxOnPaint)
         self.Bind(wx.EVT_MOUSE_EVENTS,self.wxUpdateMouse)
@@ -100,21 +100,21 @@ class RenderPanel(wx.Panel):
             self.new_mouse_coord[0]-center_x-self.offset_coord[0],
             self.new_mouse_coord[1]-center_y-self.offset_coord[1])
         if self.old_mouse_coord!=self.new_mouse_coord:
-            self.events.CallEvent(MAP_RENDER_PANEL_MOUSE_MOTION)
+            self.events.CallEvent(self.mouse_motion_event_name)
         if event.Dragging():
             self.is_dragging=True
             self.offset_coord=(self.offset_coord[0]+(self.new_mouse_coord[0]-self.old_mouse_coord[0]),self.offset_coord[1]+(self.new_mouse_coord[1]-self.old_mouse_coord[1]))
             self.UpdateDrawing()
-            self.events.CallEvent(MAP_RENDER_PANEL_MOUSE_LEFT_DOWN_EVENT)
+            self.events.CallEvent(self.mouse_left_down_event_name)
             event.Skip()
         elif event.LeftDown():
             self.is_left_click_down=True
-            self.events.CallEvent(MAP_RENDER_PANEL_MOUSE_LEFT_DOWN_EVENT)
+            self.events.CallEvent(self.mouse_left_down_event_name)
             event.Skip()
         elif event.LeftUp():
             self.is_dragging=False
             self.is_left_click_down=False
-            self.events.CallEvent(MAP_RENDER_PANEL_MOUSE_LEFT_UP_EVENT)
+            self.events.CallEvent(self.mouse_left_up_event_name)
             event.Skip()
 class RadioBox(wx.RadioBox):
     def __init__(self,parent,name,choice_event_name,choices=[]):
