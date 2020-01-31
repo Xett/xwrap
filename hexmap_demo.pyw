@@ -1,5 +1,4 @@
 import wx
-import multiprocessing as mp
 import numpy as np
 import math
 import copy
