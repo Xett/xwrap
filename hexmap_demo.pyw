@@ -80,6 +80,53 @@ class SetSelectedTileEvent(Event):
         z=events.data_model[self.selected_tile_z_spin_control_id].data.GetValue()
         events.data_model[self.map_render_panel_id].data.selected_tile=Cube(x,y,z)
         events.data_model[self.map_render_panel_id].data.wxOnSize(None)
+class MapRenderPanelMouseLeftDownEvent(Event):
+    def __init__(self,selected_tile_x_spin_control_id,selected_tile_y_spin_control_id,selected_tile_z_spin_control_id,selected_tile_type_control_id,hexmap_id,map_render_panel_id):
+        Event.__init__(self,MAP_RENDER_PANEL_MOUSE_LEFT_DOWN_EVENT,self.resfunc)
+        self.selected_tile_x_spin_control_id=selected_tile_x_spin_control_id
+        self.selected_tile_y_spin_control_id=selected_tile_y_spin_control_id
+        self.selected_tile_z_spin_control_id=selected_tile_z_spin_control_id
+        self.selected_tile_type_control_id=selected_tile_type_control_id
+        self.hexmap_id=hexmap_id
+        self.map_render_panel_id=map_render_panel_id
+    def resfunc(self,events):
+        map_render_panel=events.data_model[self.map_render_panel_id].data
+        selected_tile_x_spin_control=events.data_model[self.selected_tile_x_spin_control_id].data
+        selected_tile_y_spin_control=events.data_model[self.selected_tile_y_spin_control_id].data
+        selected_tile_z_spin_control=events.data_model[self.selected_tile_z_spin_control_id].data
+        selected_tile_type_control=events.data_model[self.selected_tile_type_control_id].data
+        hexmap=events.data_model[self.hexmap_id].data
+        hovered_tile=map_render_panel.hovered_tile
+        hx=hovered_tile.x
+        hy=hovered_tile.y
+        hz=hovered_tile.z
+        htile=hexmap[Cube(hx,hy,hz)]
+        if htile!=False:
+            map_render_panel.selected_tile=map_render_panel.hovered_tile
+            selected_tile_x_spin_control.SetValue(hx)
+            selected_tile_y_spin_control.SetValue(hy)
+            selected_tile_z_spin_control.SetValue(hz)
+            if htile.isPassable==False:
+                selected_tile_type_control.SetSelection(2)
+            elif htile.movement_cost==1:
+                selected_tile_type_control.SetSelection(0)
+            elif htile.movement_cost==2:
+                selected_tile_type_control.SetSelection(1)
+            map_render_panel.hexmap_bitmap.Draw()
+            map_render_panel.UpdateDrawing()
+class MapRenderPanelMouseMotionEvent(Event):
+    def __init__(self,hexmap_id,map_render_panel_id):
+        Event.__init__(self,MAP_RENDER_PANEL_MOUSE_MOTION,self.resfunc)
+        self.hexmap_id=hexmap_id
+        self.map_render_panel_id=map_render_panel_id
+    def resfunc(self,events):
+        hexmap=events.data_model[self.hexmap_id].data
+        map_render_panel=events.data_model[self.map_render_panel_id].data
+        hovered_tile=pixel_to_hex(map_render_panel.point)
+        if hovered_tile!=False:
+            map_render_panel.hovered_tile=hovered_tile
+            map_render_panel.hexmap_bitmap.Draw()
+            map_render_panel.UpdateDrawing()
 class HexmapBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Hexmap-Bitmap')
@@ -109,8 +156,8 @@ class HexmapBitmap(Bitmap):
         for x,y,z in Iterators.RingIterator(hexmap.radius,6):
             x_coord=x*((width/4)*3)
             y_coord=(y*(height/2))-(z*(height/2))
-            h=[(vert[0]+x_coord+self.center_x+self.parent.offset_coord[0],
-                vert[1]-y_coord+self.center_y+self.parent.offset_coord[1]) for vert in self.parent.hexagon]
+            h=[(vert[0]+x_coord+self.center_x,
+                vert[1]-y_coord+self.center_y) for vert in self.parent.hexagon]
             tile=hexmap[Cube(x,y,z)]
             dc.SetBrush(wx.Brush(wx.Colour(255,255,255)))
             if (x,y,z)==(self.parent.hovered_tile.x,self.parent.hovered_tile.y,self.parent.hovered_tile.z):
@@ -133,17 +180,17 @@ class HexmapBitmap(Bitmap):
             }
             if self.parent.notation_type=='Cube':
                 cubic_coordinates={
-                    'X':(x_coord+self.center_x+self.parent.offset_coord[0]-(text_sizes['X'][0]/2),-y_coord+self.center_y+self.parent.offset_coord[1]-(height/3)),
-                    'Y':(x_coord+self.center_x+self.parent.offset_coord[0]-(width/4),-y_coord+self.center_y+self.parent.offset_coord[1]+(height/4)-text_sizes['Y'][1]),
-                    'Z':(x_coord+self.center_x+self.parent.offset_coord[0]+(width/4)-text_sizes['Z'][0],-y_coord+self.center_y+self.parent.offset_coord[1]+(height/4)-text_sizes['Z'][1])
+                    'X':(x_coord+self.center_x-(text_sizes['X'][0]/2),-y_coord+self.center_y-(height/3)),
+                    'Y':(x_coord+self.center_x-(width/4),-y_coord+self.center_y+(height/4)-text_sizes['Y'][1]),
+                    'Z':(x_coord+self.center_x+(width/4)-text_sizes['Z'][0],-y_coord+self.center_y+(height/4)-text_sizes['Z'][1])
                 }
                 for coord,axis in zip([x,y,z],['X','Y','Z']):
                     dc.SetTextForeground(self.parent.text_colours[axis])
                     dc.DrawText(str(coord),cubic_coordinates[axis][0],cubic_coordinates[axis][1])
             elif self.parent.notation_type=='Axial':
                 axial_coordinates={
-                    'X':(x_coord+self.center_x+self.parent.offset_coord[0]-(width/4),-y_coord+self.center_y+self.parent.offset_coord[1]-(text_sizes['X'][1]/2)),
-                    'Y':(x_coord+self.center_x+self.parent.offset_coord[0]+(width/4)-text_sizes['Y'][0],-y_coord+self.center_y+self.parent.offset_coord[1]-(text_sizes['Y'][1]/2))
+                    'X':(x_coord+self.center_x-(width/4),-y_coord+self.center_y-(text_sizes['X'][1]/2)),
+                    'Y':(x_coord+self.center_x+(width/4)-text_sizes['Y'][0],-y_coord+self.center_y-(text_sizes['Y'][1]/2))
                 }
                 dc.DrawText(str(x),axial_coordinates['X'][0],axial_coordinates['X'][1])
                 dc.DrawText(str(y),axial_coordinates['Y'][0],axial_coordinates['Y'][1])
@@ -395,7 +442,6 @@ class MapRenderPanel(RenderPanel):
         self.hexmap_bitmap.OnSize()
         self.axis_bitmap.OnSize()
         RenderPanel.wxOnSize(self,event)
-#        self.hovered_tile=pixel_to_hex(point)
 class MainFrame(Frame):
     def __init__(self,events,title="Hexmap Demo"):
         Frame.__init__(self,events,title)
@@ -421,6 +467,8 @@ class App(BaseApp):
         self.events.Bind(RADIUS_SPIN_CONTROL_CHANGE_EVENT,self.RadiusSpinControlChange)
         self.events.AddEvent(SET_SELECTED_TILE_EVENT)
         self.events.Bind(SET_SELECTED_TILE_EVENT,self.SetSelectedTile)
+        self.events.Bind(MAP_RENDER_PANEL_MOUSE_LEFT_DOWN_EVENT,self.MapRenderPanelMouseLeftDown)
+        self.events.Bind(MAP_RENDER_PANEL_MOUSE_MOTION,self.MapRenderPanelMouseMotion)
     def Initialise(self):
         self.main_frame.Show(True)
         self.MainLoop()
@@ -446,21 +494,18 @@ class App(BaseApp):
         hexmap_id=self.events.data_model['Hexmap'].id
         map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
         return SetSelectedTileEvent(selected_tile_x_spin_control_id,selected_tile_y_spin_control_id,selected_tile_z_spin_control_id,hexmap_id,map_render_panel_id)
-#        self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.Bind(wx.EVT_RADIOBOX, self.SetSelectedTileType)
-#        self.main_frame.render_panel.Bind(wx.EVT_LEFT_DOWN,self.RenderPanelLeftMouseDown)
-#    def RenderPanelLeftMouseDown(self,event):
-#        tile=self.hexmap[Cube(self.main_frame.render_panel.hovered_tile.x,self.main_frame.render_panel.hovered_tile.y,self.main_frame.render_panel.hovered_tile.z)]
-#        if tile!=False:
-#            self.main_frame.render_panel.selected_tile=self.main_frame.render_panel.hovered_tile
-#            self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_x_control.SetValue(self.main_frame.render_panel.selected_tile.x)
-#            self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_y_control.SetValue(self.main_frame.render_panel.selected_tile.y)
-#            self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_z_control.SetValue(self.main_frame.render_panel.selected_tile.z)
-#            if tile.isPassable==False:
-#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(2)
-#            elif tile.movement_cost==1:
-#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(0)
-#            elif tile.movement_cost==2:
-#                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(1)
+    def MapRenderPanelMouseLeftDown(self):
+        selected_tile_x_spin_control_id=self.events.data_model['Selected-Tile-X-Spin-Control'].id
+        selected_tile_y_spin_control_id=self.events.data_model['Selected-Tile-Y-Spin-Control'].id
+        selected_tile_z_spin_control_id=self.events.data_model['Selected-Tile-Z-Spin-Control'].id
+        selected_tile_type_control_id=self.events.data_model['Selected-Tile-Type-Control'].id
+        hexmap_id=self.events.data_model['Hexmap'].id
+        map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
+        return MapRenderPanelMouseLeftDownEvent(selected_tile_x_spin_control_id,selected_tile_y_spin_control_id,selected_tile_z_spin_control_id,selected_tile_type_control_id,hexmap_id,map_render_panel_id)
+    def MapRenderPanelMouseMotion(self):
+        hexmap_id=self.events.data_model['Hexmap'].id
+        map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
+        return MapRenderPanelMouseMotionEvent(hexmap_id,map_render_panel_id)
 if __name__=='__main__':
     mp.freeze_support()
     app=App()
