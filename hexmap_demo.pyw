@@ -28,34 +28,32 @@ class NotationTypeControlChoiceChangedEvent(Event):
         choice=events.data_model[self.notation_type_control_id].data.GetString(events.data_model[self.notation_type_control_id].data.GetSelection())
         events.data_model[self.map_render_panel_id].data.SetNotationType(choice)
 class SelectedTileTypeControlChoiceChangedEvent(Event):
-    def __init__(self,selected_tile_type_control_id,map_render_panel_id):
+    def __init__(self,selected_tile_type_control_id,map_render_panel_id,hexmap_id):
         Event.__init__(self,SELECTED_TILE_TYPE_CONTROL_CHOICE_CHANGED_EVENT,self.resfunc)
         self.selected_tile_type_control_id=selected_tile_type_control_id
         self.map_render_panel_id=map_render_panel_id
+        self.hexmap_id=hexmap_id
     def resfunc(self,events):
         choice=events.data_model[self.selected_tile_type_control_id].data.GetString(events.data_model[self.selected_tile_type_control_id].data.GetSelection())
-        #events.data_model[self.map_render_panel_id].data.SetNotationType(choice)
-        #    def SetSelectedTileType(self,event):
-        #        choice=self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.GetString(self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.GetSelection())
-        #        x=self.main_frame.render_panel.selected_tile.x
-        #        y=self.main_frame.render_panel.selected_tile.y
-        #        z=self.main_frame.render_panel.selected_tile.z
-        #        tile=self.hexmap[Cube(x,y,z)]
-        #        if tile!=False:
-        #            if choice=='Movement Cost 1':
-        #                tile.movement_cost=1
-        #            elif choice=='Movement Cost 2':
-        #                tile.movement_cost=2
-        #            if choice=='Not Passable':
-        #                tile.isPassable=False
-        #        tile=self.hexmap[Cube(x,y,z)]
-        #        if tile!=False:
-        #            if not tile.isPassable:
-        #                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(2)
-        #            elif tile.movement_cost==1:
-        #                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(0)
-        #            elif tile.movement_cost==2:
-        #                self.main_frame.hexmap_control_panel.selected_tile_control_panel.selected_tile_type_control.SetSelection(1)
+        selected_tile=events.data_model[self.map_render_panel_id].data.selected_tile
+        hexmap=events.data_model[self.hexmap_id].data
+        x=selected_tile.x
+        y=selected_tile.y
+        z=selected_tile.z
+        tile=hexmap[Cube(x,y,z)]
+        if tile!=False:
+            if choice=='Movement Cost 1':
+                tile.movement_cost=1
+            elif choice=='Movement Cost 2':
+                tile.movement_cost=2
+            if choice=='Not Passable':
+                tile.isPassable=False
+            if not tile.isPassable:
+                events.data_model[self.selected_tile_type_control_id].data.SetSelection(2)
+            elif tile.movement_cost==1:
+                events.data_model[self.selected_tile_type_control_id].data.SetSelection(0)
+            elif tile.movement_cost==2:
+                events.data_model[self.selected_tile_type_control_id].data.SetSelection(1)
 class RadiusSpinControlChangeEvent(Event):
     def __init__(self,radius_spin_control_id,radius_id,hexmap_id,map_render_panel_id):
         Event.__init__(self,RADIUS_SPIN_CONTROL_CHANGE_EVENT,self.resfunc)
@@ -433,7 +431,8 @@ class App(BaseApp):
     def SelectedTileTypeControlChoiceChanged(self):
         selected_tile_type_control_id=self.events.data_model['Selected-Tile-Type-Control'].id
         map_render_panel_id=self.events.data_model['Map-Render-Panel'].id
-        return SelectedTileTypeControlChoiceChangedEvent(selected_tile_type_control_id,map_render_panel_id)
+        hexmap_id=self.events.data_model['Hexmap'].id
+        return SelectedTileTypeControlChoiceChangedEvent(selected_tile_type_control_id,map_render_panel_id,hexmap_id)
     def RadiusSpinControlChange(self):
         radius_spin_control_id=self.events.data_model['Radius-Spin-Control'].id
         radius_id=self.events.data_model['Hexmap-Radius'].id
