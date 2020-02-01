@@ -1,6 +1,11 @@
 import wx
 from . import Events as e
 import time
+class CloseEvent(e.Event):
+    def __init__(self):
+        e.Event.__init__(self,e.CLOSE_EVENT,self.resfunc)
+    def resfunc(self,events):
+        events.running=False
 class BaseApp:
     def __init__(self):
         self.app=wx.App()
@@ -14,25 +19,7 @@ class BaseApp:
         self.events.Initialise()
         self.Initialise()
     def MainLoop(self):
-        self.running=True
-        event_loop=wx.GUIEventLoop()
-        wx.EventLoop.SetActive(event_loop)
-        while self.running:
-            self.events.CallEvent(e.MAIN_LOOP_EVENT)
-            while self.events.done_queue.qsize()>0:
-                output=self.events.ProcessDoneQueue()
-                if output!=None:
-                    if output[2]!=None:
-                        if output[2].resfunc!=None:
-                            output[2].resfunc(self.events)
-            while event_loop.Pending():
-                event_loop.Dispatch()
-            event_loop.ProcessIdle()
-        while event_loop.Pending():
-            event_loop.Dispatch()
-    def OnClose(self):
-        self.events.running=False
-        self.running=False
+        self.events.MainLoop()
         wx.CallAfter(self.main_frame.Destroy)
-        self.events.Close()
-        return e.CloseEvent()
+    def OnClose(self):
+        return CloseEvent()
