@@ -221,13 +221,13 @@ class AxisBitmap(Bitmap):
         if self.current_mode=='Cube':
             return {
                 'X':{0:(np.cos((np.pi/180)*180),np.sin((np.pi/180)*180)),1:(np.cos((np.pi/180)*0),np.sin((np.pi/180)*0))},
-                'Y':{0:(np.cos((np.pi/180)*240),np.sin((np.pi/180)*240)),1:(np.cos((np.pi/180)*60),np.sin((np.pi/180)*60))},
-                'Z':{0:(np.cos((np.pi/180)*300),np.sin((np.pi/180)*300)),1:(np.cos((np.pi/180)*120),np.sin((np.pi/180)*120))}
+                'Y':{0:(np.cos((np.pi/180)*210),np.sin((np.pi/180)*210)),1:(np.cos((np.pi/180)*30),np.sin((np.pi/180)*30))},
+                'Z':{0:(np.cos((np.pi/180)*330),np.sin((np.pi/180)*330)),1:(np.cos((np.pi/180)*150),np.sin((np.pi/180)*150))}
             }
         elif self.current_mode=='Axial':
             return {
                 'X':{0:(np.cos((np.pi/180)*180),np.sin((np.pi/180)*180)),1:(np.cos((np.pi/180)*0),np.sin((np.pi/180)*0))},
-                'Y':{0:(np.cos((np.pi/180)*240),np.sin((np.pi/180)*240)),1:(np.cos((np.pi/180)*60),np.sin((np.pi/180)*60))}
+                'Y':{0:(np.cos((np.pi/180)*210),np.sin((np.pi/180)*210)),1:(np.cos((np.pi/180)*30),np.sin((np.pi/180)*30))}
             }
     def text_sizes(self,dc):
         if self.current_mode=='Cube':
