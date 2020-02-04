@@ -131,15 +131,19 @@ class MapRenderPanelMouseMotionEvent(Event):
 class HexmapBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Hexmap-Bitmap')
+        self.use_offset=True
+        self.anchor.SetCoordinates(0.5,0.5)
     @property
     def width(self):
-        return self.parent.GetSize()[0]
+        diameter=(self.events.data_model['Hexmap-Radius'].data*2)+(self.events.data_model['Hexmap-Radius'].data*2)
+        return diameter*((100)*np.sqrt(3)/2)
     @property
     def height(self):
-        return self.parent.GetSize()[1]
+        diameter=(self.events.data_model['Hexmap-Radius'].data*2)+self.events.data_model['Hexmap-Radius'].data
+        return diameter*((((100)*2)/4)*3)
     @property
     def size(self):
-        return self.parent.GetSize()
+        return (self.width,self.height)
     @property
     def x(self):
         return 0
@@ -154,16 +158,21 @@ class HexmapBitmap(Bitmap):
         height=(100)*np.sqrt(3)
         width=(100)*2
         hexmap=self.events.data_model['Hexmap'].data
+        draw_hovered=False
+        draw_selected=False
         for x,y,z in Iterators.RingIterator(hexmap.radius,6):
+            if (x,y,z)==(self.parent.hovered_tile.x,self.parent.hovered_tile.y,self.parent.hovered_tile.z):
+                draw_hovered=True
+                if (x,y,z)==(self.parent.selected_tile.x,self.parent.selected_tile.y,self.parent.selected_tile.z):
+                    draw_selected=True
             x_coord=x*((width/4)*3)
             y_coord=(y*(height/2))-(z*(height/2))
             h=[(vert[0]+x_coord+self.center_x,
                 vert[1]-y_coord+self.center_y) for vert in self.parent.hexagon]
             tile=hexmap[Cube(x,y,z)]
             dc.SetBrush(wx.Brush(wx.Colour(255,255,255)))
-            if (x,y,z)==(self.parent.hovered_tile.x,self.parent.hovered_tile.y,self.parent.hovered_tile.z):
-                dc.SetBrush(wx.Brush(wx.Colour(0,255,255)))
-            elif (x,y,z)==(self.parent.selected_tile.x,self.parent.selected_tile.y,self.parent.selected_tile.z):
+            dc.SetPen(self.parent.pens['hex_outline'])
+            if (x,y,z)==(self.parent.selected_tile.x,self.parent.selected_tile.y,self.parent.selected_tile.z):
                 dc.SetBrush(wx.Brush(wx.Colour(0,0,255)))
             elif tile!=False:
                 if tile.isPassable==False:
@@ -172,7 +181,6 @@ class HexmapBitmap(Bitmap):
                     dc.SetBrush(self.parent.brushes['movement_cost_1_tile'])
                 elif tile.movement_cost==2:
                     dc.SetBrush(self.parent.brushes['movement_cost_2_tile'])
-            dc.SetPen(self.parent.pens['hex_outline'])
             dc.DrawPolygon(h)
             text_sizes={
                 'X':dc.GetTextExtent(str(x)),
@@ -195,8 +203,17 @@ class HexmapBitmap(Bitmap):
                 }
                 dc.DrawText(str(x),axial_coordinates['X'][0],axial_coordinates['X'][1])
                 dc.DrawText(str(y),axial_coordinates['Y'][0],axial_coordinates['Y'][1])
-    def DrawToBuffer(self,buffer_device_context):
-        buffer_device_context.DrawBitmap(self.image,self.x+self.parent.offset_coord[0],self.y+self.parent.offset_coord[1])
+        if draw_hovered:
+            pen=wx.Pen(wx.Colour('gold'))
+            pen.SetWidth(5)
+            dc.SetPen(pen)
+            if draw_selected:
+                dc.SetBrush(wx.Brush(wx.Colour(0,0,255)))
+            x_coord=self.parent.hovered_tile.x*((width/4)*3)
+            y_coord=(self.parent.hovered_tile.y*(height/2))-(self.parent.hovered_tile.z*(height/2))
+            h=[(vert[0]+x_coord+self.center_x,
+                vert[1]-y_coord+self.center_y) for vert in self.parent.hexagon]
+            dc.DrawPolygon(h)
 class AxisBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Axis-Bitmap')
@@ -318,9 +335,9 @@ class AxisBitmap(Bitmap):
         elif self.current_mode=='Axial':
             return {
                 'X':(wx.Point((hw*Xx1)+cw,(hh*Xy1)+ch-(nXy/2)),
-                    wx.Point((hw*Xx2)+cw-pXx,(hh*Xy2)+ch-(pXy/2))),
-                'Y':(wx.Point((hw*Yx1)+cw-nYx-(nYx/2),(hh*Yy1)+ch-nYy),
-                    wx.Point((hw*Yx2)+cw,(hh*Yy2)+ch))
+                    wx.Point((hw*Xx2)+cw-pXx-(pXx/2),(hh*Xy2)+ch-(pXy/2))),
+                'Y':(wx.Point((hw*Yx2)+cw-nYx-(nYx/2),(hh*Yy2)+ch-pYy),
+                    wx.Point((hw*Yx1)+cw,(hh*Yy1)+ch))
             }
     def Draw(self):
         if self.current_mode=='Cube':
