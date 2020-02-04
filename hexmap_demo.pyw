@@ -5,6 +5,7 @@ import copy
 from xwrap.App import *
 from xwrap.Events import *
 from xwrap.View import *
+from xwrap.RenderPanel import *
 from collections import OrderedDict
 from hexmap import Iterators
 from hexmap.Coords import Cube
