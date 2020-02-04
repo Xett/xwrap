@@ -1,5 +1,40 @@
 import wx
 from . import Events as e
+class BitmapAnchor:
+    def __init__(self,parent,anchor_x=0.0,anchor_y=0.0):
+        self.parent=parent# Bitmap
+        self.anchor_x=anchor_x
+        self.anchor_y=anchor_y
+    def SetCoordinates(self,anchor_x=0.0,anchor_y=0.0):
+        self.anchor_x=anchor_x
+        self.anchor_y=anchor_y
+    def SetCoordinatesFromWorld(self,world_x,world_y):
+        parent_coordinates=self.GetBitmapWorldCoordinates()
+        parent_size=self.GetSize()
+        self.anchor_x=(world_x-parent_coordinates[0])/parent_size[0]
+        self.anchor_y=(world_y-parent_coordinates[1])/parent_size[1]
+    def GetBitmapWorldCoordinates(self):
+        return (self.parent.x,self.parent.y)
+    def GetSize(self):
+        return self.parent.size
+    @property
+    def x(self):
+        return self.anchor_x*self.GetSize()[0]
+    @property
+    def y(self):
+        return self.anchor_y*self.GetSize()[1]
+    @property
+    def local(self):
+        return (self.x,self.y)
+    @property
+    def world_x(self):
+        return self.GetBitmapWorldCoordinates()[0]-self.x
+    @property
+    def world_y(self):
+        return self.GetBitmapWorldCoordinates()[1]-self.y
+    @property
+    def world(self):
+        return (self.world_x,self.world_y)
 class Bitmap:
     def __init__(self,parent,name,width=10,height=10,x=0,y=0):
         self.parent=parent
@@ -9,7 +44,10 @@ class Bitmap:
         self._height=height
         self._x=x
         self._y=y
+        self.anchor=BitmapAnchor(self)
         self.image=wx.Bitmap(self.size)
+        self.use_offset=False
+        self.SetMask()
     @property
     def width(self):
         return self._width
@@ -31,13 +69,21 @@ class Bitmap:
     @property
     def center_y(self):
         return self.size[1]/2
+    def _Draw(self):
+        self.Draw()
+        self.SetMask()
     def Draw(self):
         return
+    def SetMask(self):
+        mask=wx.Mask(self.image,wx.Colour('white'))
+        self.image.SetMask(mask)
     def OnSize(self):
         self.image=wx.Bitmap(self.size)
-        self.Draw()
+        self._Draw()
     def DrawToBuffer(self,buffer_device_context):
-        buffer_device_context.DrawBitmap(self.image,self.x,self.y)
+        x=self.anchor.world_x+self.parent.offset_coord[0] if self.use_offset else self.anchor.world_x
+        y=self.anchor.world_y+self.parent.offset_coord[1] if self.use_offset else self.anchor.world_y
+        buffer_device_context.DrawBitmap(self.image,x,y,useMask=True)
 class Frame(wx.Frame):
     def __init__(self,events,title='Frame',size=(1920,1080)):
         wx.Frame.__init__(self,None,-1,title,size)
@@ -57,6 +103,7 @@ class Panel(wx.Panel):
 class RenderPanel(wx.Panel):
     def __init__(self,parent,name=''):
         wx.Panel.__init__(self,parent,size=(100,100))
+        self.parent=parent
         self.events=parent.events
         self.name=name
         self.mouse_left_down_event_name='{}-Mouse-Left-Down-Event'.format(self.name)
