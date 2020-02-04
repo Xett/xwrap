@@ -499,10 +499,16 @@ class MapRenderPanel(RenderPanel):
         self.brushes['not_passable_tile']=wx.Brush(wx.Colour(0,0,0))
         self.brushes['movement_cost_1_tile']=wx.Brush(wx.Colour(255,255,255))
         self.brushes['movement_cost_2_tile']=wx.Brush(wx.Colour(139,69,19))
-        self.axis_bitmap=AxisBitmap(self)
+        self.AddLayer('Hexmap-Layer')
+        self.AddLayer('UI-Layer-1')
         self.hexmap_bitmap=HexmapBitmap(self)
+        self.AddBitmapToLayer('Hexmap-Layer',self.hexmap_bitmap)
         self.selected_tile_bitmap=SelectedTileBitmap(self)
+        self.AddBitmapToLayer('Hexmap-Layer',self.selected_tile_bitmap)
         self.hovered_tile_bitmap=HoveredTileBitmap(self)
+        self.AddBitmapToLayer('Hexmap-Layer',self.hovered_tile_bitmap)
+        self.axis_bitmap=AxisBitmap(self)
+        self.AddBitmapToLayer('UI-Layer-1',self.axis_bitmap)
     @property
     def hexagon(self):
         return [(((100)*np.cos((np.pi/180)*(60*i))),
@@ -510,11 +516,6 @@ class MapRenderPanel(RenderPanel):
     def SetNotationType(self,choice):
         self.axis_bitmap.SetMode(choice)
         self.UpdateDrawing()
-    def Draw(self,dc):
-        self.hexmap_bitmap.DrawToBuffer(dc)
-        self.selected_tile_bitmap.DrawToBuffer(dc)
-        self.hovered_tile_bitmap.DrawToBuffer(dc)
-        self.axis_bitmap.DrawToBuffer(dc)
     def wxOnSize(self,event):
         self.hexmap_bitmap.OnSize()
         self.selected_tile_bitmap.OnSize()

@@ -1,5 +1,6 @@
 import wx
 from . import Events as e
+from collections import OrderedDict
 class BitmapAnchor:
     def __init__(self,parent,anchor_x=0.0,anchor_y=0.0):
         self.parent=parent# Bitmap
@@ -123,6 +124,11 @@ class RenderPanel(wx.Panel):
         self.pens={}
         self.brushes={}
         self.brushes['background']=wx.Brush('white')
+        self.layers=OrderedDict()
+    def AddLayer(self,layer_name):
+        self.layers[layer_name]=OrderedDict()
+    def AddBitmapToLayer(self,layer_name,bitmap):
+        self.layers[layer_name][bitmap.name]=bitmap
     def wxOnSize(self,event):
         self.buffer_image=wx.Bitmap(*self.ClientSize)
         self.UpdateDrawing()
@@ -134,13 +140,15 @@ class RenderPanel(wx.Panel):
             dc.SelectObject(self.buffer_image)
         except:
             self.wxOnSize(None)
-        self._Draw(dc)
+        self.Draw(dc)
         self.Refresh(eraseBackground=False)
         self.Update()
-    def _Draw(self,dc):
+    def Draw(self,dc):
         dc.SetBackground(self.brushes['background'])
         dc.Clear()
-        self.Draw(dc)
+        for layer_key,layer in self.layers.items():
+            for bitmap_key,bitmap in layer.items():
+                bitmap.DrawToBuffer(dc)
     def wxUpdateMouse(self,event):
         self.old_mouse_coord=self.new_mouse_coord
         self.new_mouse_coord=(event.GetX(),event.GetY())
