@@ -113,7 +113,7 @@ class MapRenderPanelMouseLeftDownEvent(Event):
                 selected_tile_type_control.SetSelection(0)
             elif htile.movement_cost==2:
                 selected_tile_type_control.SetSelection(1)
-            map_render_panel.hexmap_bitmap._Draw()
+            #map_render_panel.hexmap_bitmap._Draw()
             map_render_panel.UpdateDrawing()
 class MapRenderPanelMouseMotionEvent(Event):
     def __init__(self,hexmap_id,map_render_panel_id):
@@ -128,7 +128,6 @@ class MapRenderPanelMouseMotionEvent(Event):
         hovered_tile=pixel_to_hex((coord_x,coord_y))
         if hovered_tile!=False:
             map_render_panel.hovered_tile=hovered_tile
-            map_render_panel.hexmap_bitmap.Draw()
             map_render_panel.UpdateDrawing()
 class HexmapBitmap(Bitmap):
     def __init__(self,parent):
@@ -174,9 +173,7 @@ class HexmapBitmap(Bitmap):
             tile=hexmap[Cube(x,y,z)]
             dc.SetBrush(wx.Brush(wx.Colour(255,255,255)))
             dc.SetPen(self.parent.pens['hex_outline'])
-            if (x,y,z)==(self.parent.selected_tile.x,self.parent.selected_tile.y,self.parent.selected_tile.z):
-                dc.SetBrush(wx.Brush(wx.Colour(0,0,255)))
-            elif tile!=False:
+            if tile!=False:
                 if tile.isPassable==False:
                     dc.SetBrush(self.parent.brushes['not_passable_tile'])
                 elif tile.movement_cost==1:
@@ -205,20 +202,71 @@ class HexmapBitmap(Bitmap):
                 }
                 dc.DrawText(str(x),axial_coordinates['X'][0],axial_coordinates['X'][1])
                 dc.DrawText(str(y),axial_coordinates['Y'][0],axial_coordinates['Y'][1])
-        if draw_hovered:
-            pen=wx.Pen(wx.Colour('gold'))
-            pen.SetWidth(5)
-            dc.SetPen(pen)
-            if draw_selected:
-                dc.SetBrush(wx.Brush(wx.Colour(0,0,255)))
-            x_coord=self.parent.hovered_tile.x*((width/4)*3)
-            y_coord=(self.parent.hovered_tile.y*(height/2))-(self.parent.hovered_tile.z*(height/2))
-            h=[(vert[0]+x_coord+self.center_x,
-                vert[1]-y_coord+self.center_y) for vert in self.parent.hexagon]
-            dc.DrawPolygon(h)
-class SelectedTile(Bitmap):
+class HexagonBitmap(Bitmap):
+    def __init__(self,parent,name,x=0,y=0,z=0,use_offset=True):
+        Bitmap.__init__(self,parent,name)
+        self.use_offset=use_offset
+        self.anchor.SetCoordinates(0.5,0.5)
+        self._x=x
+        self._y=y
+        self._z=z
+    def GetX(self):
+        return self._x*((((100)*2)/4)*3)
+    def GetY(self):
+        return -((self._y*(((100)*np.sqrt(3))/2))-(self._z*(((100)*np.sqrt(3))/2)))
+    @property
+    def width(self):
+        diameter=(1*2)+(1*2)
+        return diameter*((100)*np.sqrt(3)/2)
+    @property
+    def height(self):
+        diameter=(1*2)+1
+        return diameter*((((100)*2)/4)*3)
+    @property
+    def size(self):
+        return (self.width,self.height)
+    def Draw(self):
+        dc=wx.MemoryDC()
+        dc.SelectObject(self.image)
+        dc.SetBackground(self.parent.brushes['background'])
+        dc.Clear()
+        self.DrawOverride(dc)
+        h=[(vert[0]+self.center_x,
+            vert[1]+self.center_y) for vert in self.parent.hexagon]
+        dc.DrawPolygon(h)
+    def DrawOverride(self,dc):
+        return
+class SelectedTileBitmap(HexagonBitmap):
     def __init__(self,parent):
-        Bitmap.__init__(self,parent,'Hexmap-Selected-Tile=Bitmap')
+        HexagonBitmap.__init__(self,parent,'Hexmap-Selected-Tile=Bitmap',use_offset=True)
+    @property
+    def x(self):
+        self._x=self.parent.selected_tile.x
+        return self.GetX()
+    @property
+    def y(self):
+        self._y=self.parent.selected_tile.y
+        self._z=self.parent.selected_tile.z
+        return self.GetY()
+    def DrawOverride(self,dc):
+        brush=wx.Brush(wx.Colour('blue'))
+        dc.SetBrush(brush)
+class HoveredTileBitmap(HexagonBitmap):
+    def __init__(self,parent):
+        HexagonBitmap.__init__(self,parent,'Hexmap-Hovered-Tile-Bitmap',use_offset=True)
+    @property
+    def x(self):
+        self._x=self.parent.hovered_tile.x
+        return self.GetX()
+    @property
+    def y(self):
+        self._y=self.parent.hovered_tile.y
+        self._z=self.parent.hovered_tile.z
+        return self.GetY()
+    def DrawOverride(self,dc):
+        pen=wx.Pen(wx.Colour('gold'))
+        pen.SetWidth(3)
+        dc.SetPen(pen)
 class AxisBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Axis-Bitmap')
@@ -453,6 +501,8 @@ class MapRenderPanel(RenderPanel):
         self.brushes['movement_cost_2_tile']=wx.Brush(wx.Colour(139,69,19))
         self.axis_bitmap=AxisBitmap(self)
         self.hexmap_bitmap=HexmapBitmap(self)
+        self.selected_tile_bitmap=SelectedTileBitmap(self)
+        self.hovered_tile_bitmap=HoveredTileBitmap(self)
     @property
     def hexagon(self):
         return [(((100)*np.cos((np.pi/180)*(60*i))),
@@ -462,9 +512,13 @@ class MapRenderPanel(RenderPanel):
         self.UpdateDrawing()
     def Draw(self,dc):
         self.hexmap_bitmap.DrawToBuffer(dc)
+        self.selected_tile_bitmap.DrawToBuffer(dc)
+        self.hovered_tile_bitmap.DrawToBuffer(dc)
         self.axis_bitmap.DrawToBuffer(dc)
     def wxOnSize(self,event):
         self.hexmap_bitmap.OnSize()
+        self.selected_tile_bitmap.OnSize()
+        self.hovered_tile_bitmap.OnSize()
         self.axis_bitmap.OnSize()
         RenderPanel.wxOnSize(self,event)
 class MainFrame(Frame):
