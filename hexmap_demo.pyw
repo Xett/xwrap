@@ -113,7 +113,7 @@ class MapRenderPanelMouseLeftDownEvent(Event):
                 selected_tile_type_control.SetSelection(0)
             elif htile.movement_cost==2:
                 selected_tile_type_control.SetSelection(1)
-            map_render_panel.hexmap_bitmap.Draw()
+            map_render_panel.hexmap_bitmap._Draw()
             map_render_panel.UpdateDrawing()
 class MapRenderPanelMouseMotionEvent(Event):
     def __init__(self,hexmap_id,map_render_panel_id):
@@ -123,7 +123,9 @@ class MapRenderPanelMouseMotionEvent(Event):
     def resfunc(self,events):
         hexmap=events.data_model[self.hexmap_id].data
         map_render_panel=events.data_model[self.map_render_panel_id].data
-        hovered_tile=pixel_to_hex(map_render_panel.point)
+        coord_x=map_render_panel.new_mouse_coord[0]-map_render_panel.offset_coord[0]
+        coord_y=map_render_panel.new_mouse_coord[1]-map_render_panel.offset_coord[1]#+map_render_panel.hexmap_bitmap.anchor.local[1]
+        hovered_tile=pixel_to_hex((coord_x,coord_y))
         if hovered_tile!=False:
             map_render_panel.hovered_tile=hovered_tile
             map_render_panel.hexmap_bitmap.Draw()
@@ -214,6 +216,9 @@ class HexmapBitmap(Bitmap):
             h=[(vert[0]+x_coord+self.center_x,
                 vert[1]-y_coord+self.center_y) for vert in self.parent.hexagon]
             dc.DrawPolygon(h)
+class SelectedTile(Bitmap):
+    def __init__(self,parent):
+        Bitmap.__init__(self,parent,'Hexmap-Selected-Tile=Bitmap')
 class AxisBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Axis-Bitmap')
