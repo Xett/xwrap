@@ -184,12 +184,49 @@ class HexmapBitmap(Bitmap):
                 elif tile.movement_cost==2:
                     dc.SetBrush(self.parent.brushes['movement_cost_2_tile'])
                 dc.DrawPolygon(h)
-                text_sizes={
-                    'X':dc.GetTextExtent(str(x)),
-                    'Y':dc.GetTextExtent(str(y)),
-                    'Z':dc.GetTextExtent(str(z))
-                }
+class HexmapTextBitmap(Bitmap):
+    def __init__(self,parent):
+        Bitmap.__init__(self,parent,'Hexmap-Text-Bitmap')
+        self.use_offset=True
+        self.anchor.SetCoordinates(0.5,0.5)
+    @property
+    def width(self):
+        diameter=(self.events.data_model['Hexmap-Radius'].data*2)+(self.events.data_model['Hexmap-Radius'].data*2)
+        return diameter*((100)*np.sqrt(3)/2)
+    @property
+    def height(self):
+        diameter=(self.events.data_model['Hexmap-Radius'].data*2)+self.events.data_model['Hexmap-Radius'].data
+        return diameter*((((100)*2)/4)*3)
+    @property
+    def size(self):
+        return (self.width,self.height)
+    @property
+    def x(self):
+        return 0
+    @property
+    def y(self):
+        return 0
+    def Draw(self):
+        dc=wx.MemoryDC()
+        dc.SelectObject(self.image)
+        dc.SetBackground(self.parent.brushes['background'])
+        dc.Clear()
+        height=(100)*np.sqrt(3)
+        width=(100)*2
+        hexmap=self.events.data_model['Hexmap'].data
+        for x,y,z in Iterators.RingIterator(hexmap.radius,6):
+            x_coord=x*((width/4)*3)
+            y_coord=(y*(height/2))-(z*(height/2))
+            h=[(vert[0]+x_coord+self.center_x,
+                vert[1]-y_coord+self.center_y) for vert in self.parent.hexagon]
+            tile=hexmap[Cube(x,y,z)]
+            if tile!=False:
                 if self.parent.notation_type!='None':
+                    text_sizes={
+                        'X':dc.GetTextExtent(str(x)),
+                        'Y':dc.GetTextExtent(str(y)),
+                        'Z':dc.GetTextExtent(str(z))
+                    }
                     coordinates={
                         'X':(x_coord+self.center_x-(text_sizes['X'][0]/2),-y_coord+self.center_y-(height/3)),
                         'Y':(x_coord+self.center_x-(width/4),-y_coord+self.center_y+(height/4)-text_sizes['Y'][1]),
@@ -500,14 +537,17 @@ class MapRenderPanel(RenderPanel):
         self.brushes['not_passable_tile']=wx.Brush(wx.Colour(0,0,0))
         self.brushes['movement_cost_1_tile']=wx.Brush(wx.Colour(255,255,255))
         self.brushes['movement_cost_2_tile']=wx.Brush(wx.Colour(139,69,19))
-        self.AddLayer('Hexmap-Layer')
+        self.AddLayer('Hexmap-Background-Layer')
+        self.AddLayer('Hexmap-Text-Layer')
         self.AddLayer('UI-Layer-1')
         self.hexmap_bitmap=HexmapBitmap(self)
-        self.AddBitmapToLayer('Hexmap-Layer',self.hexmap_bitmap)
+        self.AddBitmapToLayer('Hexmap-Background-Layer',self.hexmap_bitmap)
         self.selected_tile_bitmap=SelectedTileBitmap(self)
-        self.AddBitmapToLayer('Hexmap-Layer',self.selected_tile_bitmap)
+        self.AddBitmapToLayer('Hexmap-Background-Layer',self.selected_tile_bitmap)
         self.hovered_tile_bitmap=HoveredTileBitmap(self)
-        self.AddBitmapToLayer('Hexmap-Layer',self.hovered_tile_bitmap)
+        self.AddBitmapToLayer('Hexmap-Background-Layer',self.hovered_tile_bitmap)
+        self.hexmap_text_bitmap=HexmapTextBitmap(self)
+        self.AddBitmapToLayer('Hexmap-Text-Layer',self.hexmap_text_bitmap)
         self.axis_bitmap=AxisBitmap(self)
         self.AddBitmapToLayer('UI-Layer-1',self.axis_bitmap)
     @property
@@ -517,12 +557,13 @@ class MapRenderPanel(RenderPanel):
     def SetNotationType(self,choice):
         self.notation_type=choice
         self.axis_bitmap.SetMode(choice)
-        self.hexmap_bitmap.UpdateBitmap()
+        self.hexmap_text_bitmap.UpdateBitmap()
         self.UpdateDrawing()
     def wxOnSize(self,event):
         self.hexmap_bitmap.OnSize()
         self.selected_tile_bitmap.OnSize()
         self.hovered_tile_bitmap.OnSize()
+        self.hexmap_text_bitmap.OnSize()
         self.axis_bitmap.OnSize()
         RenderPanel.wxOnSize(self,event)
 class MainFrame(Frame):
