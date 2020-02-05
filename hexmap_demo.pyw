@@ -39,23 +39,41 @@ class SelectedTileTypeControlChoiceChangedEvent(Event):
         choice=events.data_model[self.selected_tile_type_control_id].data.GetString(events.data_model[self.selected_tile_type_control_id].data.GetSelection())
         selected_tile=events.data_model[self.map_render_panel_id].data.selected_tile
         hexmap=events.data_model[self.hexmap_id].data
+        map_render_panel=events.data_model[self.map_render_panel_id].data
         x=selected_tile.x
         y=selected_tile.y
         z=selected_tile.z
         tile=hexmap[Cube(x,y,z)]
         if tile!=False:
+            old_choice=0
+            if tile.isPassable==False:
+                old_choice=2
+            elif tile.movement_cost==2:
+                old_choice=1
             if choice=='Movement Cost 1':
                 tile.movement_cost=1
+                tile.isPassable=True
             elif choice=='Movement Cost 2':
                 tile.movement_cost=2
+                tile.isPassable=True
             if choice=='Not Passable':
                 tile.isPassable=False
+                tile.movement_cost=0
             if not tile.isPassable:
                 events.data_model[self.selected_tile_type_control_id].data.SetSelection(2)
+                map_render_panel.hexmap_layer_3_bitmap.UpdateBitmap()
             elif tile.movement_cost==1:
                 events.data_model[self.selected_tile_type_control_id].data.SetSelection(0)
+                map_render_panel.hexmap_layer_1_bitmap.UpdateBitmap()
             elif tile.movement_cost==2:
                 events.data_model[self.selected_tile_type_control_id].data.SetSelection(1)
+                map_render_panel.hexmap_layer_2_bitmap.UpdateBitmap()
+            if old_choice==0:
+                map_render_panel.hexmap_layer_1_bitmap.UpdateBitmap()
+            elif old_choice==1:
+                map_render_panel.hexmap_layer_2_bitmap.UpdateBitmap()
+            elif old_choice==2:
+                map_render_panel.hexmap_layer_3_bitmap.UpdateBitmap()
 class RadiusSpinControlChangeEvent(Event):
     def __init__(self,radius_spin_control_id,radius_id,hexmap_id,map_render_panel_id):
         Event.__init__(self,RADIUS_SPIN_CONTROL_CHANGE_EVENT,self.resfunc)
@@ -112,15 +130,12 @@ class MapRenderPanelMouseLeftDownEvent(Event):
                 if htile.isPassable==False:
                     if selected_tile_type_control.GetSelection()!=2:
                         selected_tile_type_control.SetSelection(2)
-                        map_render_panel.hexmap_bitmap.UpdateBitmap()
                 elif htile.movement_cost==1:
                     if selected_tile_type_control.GetSelection()!=0:
                         selected_tile_type_control.SetSelection(0)
-                        map_render_panel.hexmap_bitmap.UpdateBitmap()
                 elif htile.movement_cost==2:
                     if selected_tile_type_control.GetSelection()!=1:
                         selected_tile_type_control.SetSelection(1)
-                        map_render_panel.hexmap_bitmap.UpdateBitmap()
                 map_render_panel.UpdateDrawing()
 class MapRenderPanelMouseMotionEvent(Event):
     def __init__(self,hexmap_id,map_render_panel_id):
@@ -136,11 +151,12 @@ class MapRenderPanelMouseMotionEvent(Event):
         if hovered_tile!=False:
             map_render_panel.hovered_tile=hovered_tile
             map_render_panel.UpdateDrawing()
-class HexmapBitmap(Bitmap):
-    def __init__(self,parent):
-        Bitmap.__init__(self,parent,'Hexmap-Bitmap')
+class HexmapLayerBitmap(Bitmap):
+    def __init__(self,parent,num):
+        Bitmap.__init__(self,parent,'Hexmap-Layer-{}-Bitmap'.format(num+1))
         self.use_offset=True
         self.anchor.SetCoordinates(0.5,0.5)
+        self.num=num
     @property
     def width(self):
         diameter=(self.events.data_model['Hexmap-Radius'].data*2)+(self.events.data_model['Hexmap-Radius'].data*2)
@@ -166,24 +182,28 @@ class HexmapBitmap(Bitmap):
         height=(100)*np.sqrt(3)
         width=(100)*2
         hexmap=self.events.data_model['Hexmap'].data
-        draw_hovered=False
-        draw_selected=False
+        if self.num==0:
+            dc.SetBrush(self.parent.brushes['movement_cost_1_tile'])
+        elif self.num==1:
+            dc.SetBrush(self.parent.brushes['movement_cost_2_tile'])
+        elif self.num==2:
+            dc.SetBrush(self.parent.brushes['not_passable_tile'])
+        dc.SetPen(self.parent.pens['hex_outline'])
         for x,y,z in Iterators.RingIterator(hexmap.radius,6):
             x_coord=x*((width/4)*3)
             y_coord=(y*(height/2))-(z*(height/2))
             h=[(vert[0]+x_coord+self.center_x,
                 vert[1]-y_coord+self.center_y) for vert in self.parent.hexagon]
             tile=hexmap[Cube(x,y,z)]
-            dc.SetBrush(self.parent.brushes['background'])
-            dc.SetPen(self.parent.pens['hex_outline'])
             if tile!=False:
                 if tile.isPassable==False:
-                    dc.SetBrush(self.parent.brushes['not_passable_tile'])
+                    mode=2
                 elif tile.movement_cost==1:
-                    dc.SetBrush(self.parent.brushes['movement_cost_1_tile'])
+                    mode=0
                 elif tile.movement_cost==2:
-                    dc.SetBrush(self.parent.brushes['movement_cost_2_tile'])
-                dc.DrawPolygon(h)
+                    mode=1
+                if mode==self.num:
+                    dc.DrawPolygon(h)
 class HexmapTextBitmap(Bitmap):
     def __init__(self,parent):
         Bitmap.__init__(self,parent,'Hexmap-Text-Bitmap')
@@ -535,13 +555,17 @@ class MapRenderPanel(RenderPanel):
         self.pens['hex_outline']=wx.Pen('black')
         self.brushes['background']=wx.Brush('white')
         self.brushes['not_passable_tile']=wx.Brush(wx.Colour(0,0,0))
-        self.brushes['movement_cost_1_tile']=wx.Brush(wx.Colour(255,255,255))
+        self.brushes['movement_cost_1_tile']=wx.Brush('white')
         self.brushes['movement_cost_2_tile']=wx.Brush(wx.Colour(139,69,19))
         self.AddLayer('Hexmap-Background-Layer')
         self.AddLayer('Hexmap-Text-Layer')
         self.AddLayer('UI-Layer-1')
-        self.hexmap_bitmap=HexmapBitmap(self)
-        self.AddBitmapToLayer('Hexmap-Background-Layer',self.hexmap_bitmap)
+        self.hexmap_layer_1_bitmap=HexmapLayerBitmap(self,0)
+        self.AddBitmapToLayer('Hexmap-Background-Layer',self.hexmap_layer_1_bitmap)
+        self.hexmap_layer_2_bitmap=HexmapLayerBitmap(self,1)
+        self.AddBitmapToLayer('Hexmap-Background-Layer',self.hexmap_layer_2_bitmap)
+        self.hexmap_layer_3_bitmap=HexmapLayerBitmap(self,2)
+        self.AddBitmapToLayer('Hexmap-Background-Layer',self.hexmap_layer_3_bitmap)
         self.selected_tile_bitmap=SelectedTileBitmap(self)
         self.AddBitmapToLayer('Hexmap-Background-Layer',self.selected_tile_bitmap)
         self.hovered_tile_bitmap=HoveredTileBitmap(self)
@@ -560,7 +584,9 @@ class MapRenderPanel(RenderPanel):
         self.hexmap_text_bitmap.UpdateBitmap()
         self.UpdateDrawing()
     def wxOnSize(self,event):
-        self.hexmap_bitmap.OnSize()
+        self.hexmap_layer_1_bitmap.OnSize()
+        self.hexmap_layer_2_bitmap.OnSize()
+        self.hexmap_layer_3_bitmap.OnSize()
         self.selected_tile_bitmap.OnSize()
         self.hovered_tile_bitmap.OnSize()
         self.hexmap_text_bitmap.OnSize()
