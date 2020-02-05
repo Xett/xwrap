@@ -169,16 +169,12 @@ class HexmapBitmap(Bitmap):
         draw_hovered=False
         draw_selected=False
         for x,y,z in Iterators.RingIterator(hexmap.radius,6):
-            if (x,y,z)==(self.parent.hovered_tile.x,self.parent.hovered_tile.y,self.parent.hovered_tile.z):
-                draw_hovered=True
-                if (x,y,z)==(self.parent.selected_tile.x,self.parent.selected_tile.y,self.parent.selected_tile.z):
-                    draw_selected=True
             x_coord=x*((width/4)*3)
             y_coord=(y*(height/2))-(z*(height/2))
             h=[(vert[0]+x_coord+self.center_x,
                 vert[1]-y_coord+self.center_y) for vert in self.parent.hexagon]
             tile=hexmap[Cube(x,y,z)]
-            dc.SetBrush(wx.Brush(wx.Colour(255,255,255)))
+            dc.SetBrush(self.parent.brushes['background'])
             dc.SetPen(self.parent.pens['hex_outline'])
             if tile!=False:
                 if tile.isPassable==False:
@@ -187,26 +183,26 @@ class HexmapBitmap(Bitmap):
                     dc.SetBrush(self.parent.brushes['movement_cost_1_tile'])
                 elif tile.movement_cost==2:
                     dc.SetBrush(self.parent.brushes['movement_cost_2_tile'])
-            dc.DrawPolygon(h)
-            text_sizes={
-                'X':dc.GetTextExtent(str(x)),
-                'Y':dc.GetTextExtent(str(y)),
-                'Z':dc.GetTextExtent(str(z))
-            }
-            if self.parent.notation_type!='None':
-                coordinates={
-                    'X':(x_coord+self.center_x-(text_sizes['X'][0]/2),-y_coord+self.center_y-(height/3)),
-                    'Y':(x_coord+self.center_x-(width/4),-y_coord+self.center_y+(height/4)-text_sizes['Y'][1]),
-                    'Z':(x_coord+self.center_x+(width/4)-text_sizes['Z'][0],-y_coord+self.center_y+(height/4)-text_sizes['Z'][1])
+                dc.DrawPolygon(h)
+                text_sizes={
+                    'X':dc.GetTextExtent(str(x)),
+                    'Y':dc.GetTextExtent(str(y)),
+                    'Z':dc.GetTextExtent(str(z))
                 }
-                coord_names=['X','Y']
-                coords=[x,y]
-                if self.parent.notation_type=='Cube':
-                    coord_names.append('Z')
-                    coords.append(z)
-                for coord,axis in zip(coords,coord_names):
-                    dc.SetTextForeground(self.parent.text_colours[axis])
-                    dc.DrawText(str(coord),coordinates[axis][0],coordinates[axis][1])
+                if self.parent.notation_type!='None':
+                    coordinates={
+                        'X':(x_coord+self.center_x-(text_sizes['X'][0]/2),-y_coord+self.center_y-(height/3)),
+                        'Y':(x_coord+self.center_x-(width/4),-y_coord+self.center_y+(height/4)-text_sizes['Y'][1]),
+                        'Z':(x_coord+self.center_x+(width/4)-text_sizes['Z'][0],-y_coord+self.center_y+(height/4)-text_sizes['Z'][1])
+                    }
+                    coord_names=['X','Y']
+                    coords=[x,y]
+                    if self.parent.notation_type=='Cube':
+                        coord_names.append('Z')
+                        coords.append(z)
+                    for coord,axis in zip(coords,coord_names):
+                        dc.SetTextForeground(self.parent.text_colours[axis])
+                        dc.DrawText(str(coord),coordinates[axis][0],coordinates[axis][1])
 class HexagonBitmap(Bitmap):
     def __init__(self,parent,name,x=0,y=0,z=0,use_offset=True):
         Bitmap.__init__(self,parent,name)
