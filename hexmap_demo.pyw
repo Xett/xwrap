@@ -659,6 +659,6 @@ class App(BaseApp):
 if __name__=='__main__':
     mp.freeze_support()
     app=App()
-    app.events.CallEvent(INITIALISE_EVENT)
+    app.Start()
     del app
 exit()

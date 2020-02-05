@@ -1,16 +1,12 @@
 import multiprocessing as mp
 from collections import OrderedDict
 import wx
-INITIALISE_EVENT='Initialise-Event'
 MAIN_LOOP_EVENT='Main-Loop-Event'
 CLOSE_EVENT='Close-Event'
 class Event:
     def __init__(self,name,resfunc):
         self.name=name
         self.resfunc=resfunc
-class InitialiseEvent(Event):
-    def __init__(self,resfunc=None):
-        Event.__init__(self,INITIALISE_EVENT,resfunc)
 class MainLoopEvent(Event):
     def __init__(self,resfunc=None):
         Event.__init__(self,MAIN_LOOP_EVENT,resfunc)
