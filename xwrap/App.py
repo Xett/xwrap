@@ -1,11 +1,6 @@
 import wx
 from .Events import *
 import time
-class CloseEvent(Event):
-    def __init__(self):
-        Event.__init__(self,CLOSE_EVENT,self.resfunc)
-    def resfunc(self,events):
-        events.running=False
 class BaseApp:
     def __init__(self):
         self.app=wx.App()

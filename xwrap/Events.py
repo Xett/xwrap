@@ -15,9 +15,10 @@ class MainLoopEvent(Event):
     def __init__(self,resfunc=None):
         Event.__init__(self,MAIN_LOOP_EVENT,resfunc)
 class CloseEvent(Event):
-    def __init__(self,resfunc=None):
-        Event.__init__(self,CLOSE_EVENT,resfunc)
-        self.running=False
+    def __init__(self):
+        Event.__init__(self,CLOSE_EVENT,self.resfunc)
+    def resfunc(self,events):
+        events.running=False
 class Data:
     def __init__(self,id,name,data):
         self.id=id
