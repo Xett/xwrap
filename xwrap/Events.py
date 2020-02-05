@@ -57,10 +57,8 @@ class EventLoop(wx.GUIEventLoop):
         events_pending=self.events.done_queue.qsize()>0
         if events_pending:
             output=self.events.ProcessDoneQueue()
-            if output!=None:
-                if output[2]!=None:
-                    if output[2].resfunc!=None:
-                        output[2].resfunc(self.events)
+            if output!=None and output[2]!=None and output[2].resfunc!=None:
+                output[2].resfunc(self.events)
         else:
             wx.GUIEventLoop.Dispatch(self)
 class Events:
