@@ -6,7 +6,6 @@ class BaseApp:
         self.app=wx.App()
         self.events=Events()
         self.events.BindData('Application_Root',self)
-        self.events.AddEvent(MAIN_LOOP_EVENT)
         self.events.AddEvent(CLOSE_EVENT)
         self.events.Bind(CLOSE_EVENT,self.OnClose)
     def Start(self):

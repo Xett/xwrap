@@ -1,15 +1,11 @@
 import multiprocessing as mp
 from collections import OrderedDict
 import wx
-MAIN_LOOP_EVENT='Main-Loop-Event'
 CLOSE_EVENT='Close-Event'
 class Event:
     def __init__(self,name,resfunc):
         self.name=name
         self.resfunc=resfunc
-class MainLoopEvent(Event):
-    def __init__(self,resfunc=None):
-        Event.__init__(self,MAIN_LOOP_EVENT,resfunc)
 class CloseEvent(Event):
     def __init__(self):
         Event.__init__(self,CLOSE_EVENT,self.resfunc)
@@ -49,7 +45,6 @@ class EventLoop(wx.GUIEventLoop):
     def MainLoop(self):
         wx.EventLoop.SetActive(self)
         while self.events.running:
-            self.events.CallEvent(MAIN_LOOP_EVENT)
             while self.Pending():
                 self.Dispatch()
             self.ProcessIdle()
