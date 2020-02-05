@@ -104,18 +104,24 @@ class MapRenderPanelMouseLeftDownEvent(Event):
         hz=hovered_tile.z
         htile=hexmap[Cube(hx,hy,hz)]
         if htile!=False:
-            map_render_panel.selected_tile=map_render_panel.hovered_tile
-            selected_tile_x_spin_control.SetValue(hx)
-            selected_tile_y_spin_control.SetValue(hy)
-            selected_tile_z_spin_control.SetValue(hz)
-            if htile.isPassable==False:
-                selected_tile_type_control.SetSelection(2)
-            elif htile.movement_cost==1:
-                selected_tile_type_control.SetSelection(0)
-            elif htile.movement_cost==2:
-                selected_tile_type_control.SetSelection(1)
-            map_render_panel.hexmap_bitmap.UpdateBitmap()
-            map_render_panel.UpdateDrawing()
+            if map_render_panel.selected_tile!=map_render_panel.hovered_tile:
+                map_render_panel.selected_tile=map_render_panel.hovered_tile
+                selected_tile_x_spin_control.SetValue(hx)
+                selected_tile_y_spin_control.SetValue(hy)
+                selected_tile_z_spin_control.SetValue(hz)
+                if htile.isPassable==False:
+                    if selected_tile_type_control.GetSelection()!=2:
+                        selected_tile_type_control.SetSelection(2)
+                        map_render_panel.hexmap_bitmap.UpdateBitmap()
+                elif htile.movement_cost==1:
+                    if selected_tile_type_control.GetSelection()!=0:
+                        selected_tile_type_control.SetSelection(0)
+                        map_render_panel.hexmap_bitmap.UpdateBitmap()
+                elif htile.movement_cost==2:
+                    if selected_tile_type_control.GetSelection()!=1:
+                        selected_tile_type_control.SetSelection(1)
+                        map_render_panel.hexmap_bitmap.UpdateBitmap()
+                map_render_panel.UpdateDrawing()
 class MapRenderPanelMouseMotionEvent(Event):
     def __init__(self,hexmap_id,map_render_panel_id):
         Event.__init__(self,MAP_RENDER_PANEL_MOUSE_MOTION,self.resfunc)
@@ -187,22 +193,20 @@ class HexmapBitmap(Bitmap):
                 'Y':dc.GetTextExtent(str(y)),
                 'Z':dc.GetTextExtent(str(z))
             }
-            if self.parent.notation_type=='Cube':
-                cubic_coordinates={
+            if self.parent.notation_type!='None':
+                coordinates={
                     'X':(x_coord+self.center_x-(text_sizes['X'][0]/2),-y_coord+self.center_y-(height/3)),
                     'Y':(x_coord+self.center_x-(width/4),-y_coord+self.center_y+(height/4)-text_sizes['Y'][1]),
                     'Z':(x_coord+self.center_x+(width/4)-text_sizes['Z'][0],-y_coord+self.center_y+(height/4)-text_sizes['Z'][1])
                 }
-                for coord,axis in zip([x,y,z],['X','Y','Z']):
+                coord_names=['X','Y']
+                coords=[x,y]
+                if self.parent.notation_type=='Cube':
+                    coord_names.append('Z')
+                    coords.append(z)
+                for coord,axis in zip(coords,coord_names):
                     dc.SetTextForeground(self.parent.text_colours[axis])
-                    dc.DrawText(str(coord),cubic_coordinates[axis][0],cubic_coordinates[axis][1])
-            elif self.parent.notation_type=='Axial':
-                axial_coordinates={
-                    'X':(x_coord+self.center_x-(width/4),-y_coord+self.center_y-(text_sizes['X'][1]/2)),
-                    'Y':(x_coord+self.center_x+(width/4)-text_sizes['Y'][0],-y_coord+self.center_y-(text_sizes['Y'][1]/2))
-                }
-                dc.DrawText(str(x),axial_coordinates['X'][0],axial_coordinates['X'][1])
-                dc.DrawText(str(y),axial_coordinates['Y'][0],axial_coordinates['Y'][1])
+                    dc.DrawText(str(coord),coordinates[axis][0],coordinates[axis][1])
 class HexagonBitmap(Bitmap):
     def __init__(self,parent,name,x=0,y=0,z=0,use_offset=True):
         Bitmap.__init__(self,parent,name)
@@ -515,7 +519,9 @@ class MapRenderPanel(RenderPanel):
         return [(((100)*np.cos((np.pi/180)*(60*i))),
                  ((100)*np.sin((np.pi/180)*(60*i)))) for i in range(0,6)]
     def SetNotationType(self,choice):
+        self.notation_type=choice
         self.axis_bitmap.SetMode(choice)
+        self.hexmap_bitmap.UpdateBitmap()
         self.UpdateDrawing()
     def wxOnSize(self,event):
         self.hexmap_bitmap.OnSize()
