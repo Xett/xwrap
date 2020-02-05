@@ -70,7 +70,7 @@ class Bitmap:
     @property
     def center_y(self):
         return self.size[1]/2
-    def _Draw(self):
+    def UpdateBitmap(self):
         self.Draw()
         self.SetMask()
     def Draw(self):
@@ -80,7 +80,7 @@ class Bitmap:
         self.image.SetMask(mask)
     def OnSize(self):
         self.image=wx.Bitmap(self.size)
-        self._Draw()
+        self.UpdateBitmap()
     def DrawToBuffer(self,buffer_device_context):
         x=self.anchor.world_x+self.parent.offset_coord[0] if self.use_offset else self.anchor.world_x
         y=self.anchor.world_y+self.parent.offset_coord[1] if self.use_offset else self.anchor.world_y

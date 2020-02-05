@@ -114,7 +114,7 @@ class MapRenderPanelMouseLeftDownEvent(Event):
                 selected_tile_type_control.SetSelection(0)
             elif htile.movement_cost==2:
                 selected_tile_type_control.SetSelection(1)
-            map_render_panel.hexmap_bitmap._Draw()
+            map_render_panel.hexmap_bitmap.UpdateBitmap()
             map_render_panel.UpdateDrawing()
 class MapRenderPanelMouseMotionEvent(Event):
     def __init__(self,hexmap_id,map_render_panel_id):
