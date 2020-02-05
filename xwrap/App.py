@@ -1,20 +1,20 @@
 import wx
-from . import Events as e
+from .Events import *
 import time
-class CloseEvent(e.Event):
+class CloseEvent(Event):
     def __init__(self):
-        e.Event.__init__(self,e.CLOSE_EVENT,self.resfunc)
+        Event.__init__(self,CLOSE_EVENT,self.resfunc)
     def resfunc(self,events):
         events.running=False
 class BaseApp:
     def __init__(self):
         self.app=wx.App()
-        self.events=e.Events()
-        self.events.AddEvent(e.INITIALISE_EVENT)
-        self.events.Bind(e.INITIALISE_EVENT,self.OnInitialise)
-        self.events.AddEvent(e.MAIN_LOOP_EVENT)
-        self.events.AddEvent(e.CLOSE_EVENT)
-        self.events.Bind(e.CLOSE_EVENT,self.OnClose)
+        self.events=Events()
+        self.events.AddEvent(INITIALISE_EVENT)
+        self.events.Bind(INITIALISE_EVENT,self.OnInitialise)
+        self.events.AddEvent(MAIN_LOOP_EVENT)
+        self.events.AddEvent(CLOSE_EVENT)
+        self.events.Bind(CLOSE_EVENT,self.OnClose)
     def OnInitialise(self):
         self.events.Initialise()
         self.Initialise()

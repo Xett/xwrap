@@ -1,5 +1,5 @@
 import wx
-from . import Events as e
+from .Events import *
 from collections import OrderedDict
 class BitmapAnchor:
     def __init__(self,parent,anchor_x=0.0,anchor_y=0.0):
