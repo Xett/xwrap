@@ -115,6 +115,9 @@ class RenderPanel(wx.Panel):
         self.layers[layer_name][bitmap.name]=bitmap
     def wxOnSize(self,event):
         self.buffer_image=wx.Bitmap(*self.ClientSize)
+        for layer_key,layer in self.layers.items():
+            for bitmap_key,bitmap in layer.items():
+                bitmap.OnSize()
         self.UpdateDrawing()
     def wxOnPaint(self,event):
         wx.BufferedPaintDC(self,self.buffer_image)
