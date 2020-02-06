@@ -43,7 +43,7 @@ class SpinCtrl(wx.SpinCtrl):
         self.events.CallEvent(self.change_event_name)
 class ListCtrl(wx.ListCtrl):
     def __init__(self,parent,name,insert_event_name,select_event_name):
-        wx.ListCtrl.__init__(self,parent)
+        wx.ListCtrl.__init__(self,parent,style=wx.LC_REPORT)
         self.parent=parent
         self.name=name
         self.insert_event_name=insert_event_name
