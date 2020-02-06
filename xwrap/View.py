@@ -41,3 +41,20 @@ class SpinCtrl(wx.SpinCtrl):
         self.Bind(wx.EVT_SPINCTRL,self.wxOnChange)
     def wxOnChange(self,event):
         self.events.CallEvent(self.change_event_name)
+class ListCtrl(wx.ListCtrl):
+    def __init__(self,parent,name,insert_event_name,select_event_name):
+        wx.ListCtrl.__init__(self,parent)
+        self.parent=parent
+        self.name=name
+        self.insert_event_name=insert_event_name
+        self.select_event_name=select_event_name
+        self.events=self.parent.events
+        self.events.AddEvent(self.insert_event_name)
+        self.events.AddEvent(self.select_event_name)
+        self.events.BindData(self.name,self)
+        self.Bind(wx.EVT_LIST_INSERT_ITEM,self.wxOnItemInserted)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED,self.wxOnItemSelected)
+    def wxOnItemInserted(self,event):
+        self.events.CallEvent(self.insert_event_name)
+    def wxOnItemSelected(self,event):
+        self.events.CallEvent(self.select_event_name)
