@@ -86,8 +86,8 @@ class Bitmap:
         y=self.anchor.world_y+self.parent.offset_coord[1] if self.use_offset else self.anchor.world_y
         buffer_device_context.DrawBitmap(self.image,x,y,useMask=True)
 class RenderPanel(wx.Panel):
-    def __init__(self,parent,name=''):
-        wx.Panel.__init__(self,parent,size=(100,100))
+    def __init__(self,parent,name='',size=(100,100)):
+        wx.Panel.__init__(self,parent,size)
         self.parent=parent
         self.events=parent.events
         self.name=name
