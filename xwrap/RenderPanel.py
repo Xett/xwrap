@@ -51,10 +51,10 @@ class Bitmap:
         self.SetMask()
     @property
     def width(self):
-        return self._width
+        return self._width if self._width>0 else 1
     @property
     def height(self):
-        return self._height
+        return self._height if self_height>0 else 1
     @property
     def x(self):
         return self._x
@@ -63,7 +63,7 @@ class Bitmap:
         return self._y
     @property
     def size(self):
-        return (self.width,self.height)
+        return (self.width if self.width>0 else 1,self.height if self.height>0 else 1)
     @property
     def center_x(self):
         return self.size[0]/2
